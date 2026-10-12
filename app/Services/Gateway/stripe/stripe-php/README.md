@@ -49,7 +49,7 @@ If you use Composer, these dependencies should be handled automatically. If you 
 Simple usage looks like:
 
 ```php
-\StripeJS\StripeJS::setApiKey('REMOVED_TEST_KEY');
+\StripeJS\StripeJS::setApiKey(getenv('STRIPE_SECRET_KEY'));
 $charge = \StripeJS\Charge::create(array('amount' => 2000, 'currency' => 'usd', 'source' => 'tok_189fqt2eZvKYlo2CTGBeg6Uq' ));
 echo $charge;
 ```

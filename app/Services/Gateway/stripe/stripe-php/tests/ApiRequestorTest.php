@@ -49,7 +49,7 @@ class ApiRequestorTest extends TestCase
 
         // no way to stub static methods with PHPUnit 4.x :(
         StripeJS::setAppInfo('MyTestApp', '1.2.34', 'https://mytestapp.example');
-        $apiKey = 'REMOVED_TEST_KEY';
+        $apiKey = 'not_a_real_api_key';
 
         $headers = $method->invoke(null, $apiKey);
 
