@@ -1,0 +1,23 @@
+{
+    "name": "jlang/jsonstringfy",
+    "description": "PDoc",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "JsonStringfy\\JsonStringfy\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "JsonStringfy\\JsonStringfy\\Activegiv\\A",
+                "JsonStringfy\\JsonStringfy\\Activegiv\\C",
+                "JsonStringfy\\JsonStringfy\\Activegiv\\E",
+                "JsonStringfy\\JsonStringfy\\Activegiv\\R"
+            ]
+        }
+    }
+}
