@@ -1,0 +1,74 @@
+name: Deploy Laravel site over FTP
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Preview the deployment without changing the server
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Sync site to /site1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the pushed revision
+        uses: actions/checkout@v4
+
+      - name: Check FTP secrets are configured
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$FTP_SERVER" || -z "$FTP_USERNAME" || -z "$FTP_PASSWORD" ]]; then
+            echo "::error::Add FTP_SERVER, FTP_USERNAME, and FTP_PASSWORD under GitHub repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Deploy to hosting
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: 21
+          local-dir: ./
+          server-dir: /site1/
+          dangerous-clean-slate: false
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          timeout: 120000
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.env
+            **/.env.*
+            **/.replit
+            **/.replitignore
+            **/.agents/**
+            **/.local/**
+            **/.conversation/**
+            **/.cache/**
+            **/.github/**
+            **/attached_assets/**
+            **/tests/**
+            **/storage/**
+            **/assets/uploads/**
+            **/README.md
+            **/phpunit.xml
+            **/server.php
+            **/.editorconfig
+            **/.gitattributes
+            **/.styleci.yml
