@@ -1,0 +1,1 @@
+- [GitHub secret-push cleanup](github-secret-push-cleanup.md) — push protection scans commit history; removing a key from current files alone may not unblock a push.
