@@ -38,6 +38,11 @@ class WalletController extends Controller
     {
         $user = $this->currencies->initializeUser(auth()->user());
         $currency = strtoupper($user->wallet_currency ?: 'USD');
+        $supportedCurrencies = $this->currencies->supportedCurrencies();
+        $targetCurrency = strtoupper(trim((string)$request->query('currency', $currency)));
+        if (!array_key_exists($targetCurrency, $supportedCurrencies)) {
+            $targetCurrency = $currency;
+        }
         $phoneNormalizer = app(PhoneNumberNormalizer::class);
         $phoneCode = $phoneNormalizer->dialDigits($user->phone_code);
         if ($phoneCode === '' && $currency === 'KES') {
@@ -82,8 +87,9 @@ class WalletController extends Controller
 
         return view(template() . 'user.currency-wallet', [
             'user' => $user,
-            'currencies' => $this->currencies->supportedCurrencies(),
+            'currencies' => $supportedCurrencies,
             'currency' => $currency,
+            'targetCurrency' => $targetCurrency,
             'currencySymbol' => $this->currencies->symbol($currency),
             'phonePrefix' => $phoneCode !== '' ? '+' . $phoneCode : '',
             'phoneCode' => $phoneCode,

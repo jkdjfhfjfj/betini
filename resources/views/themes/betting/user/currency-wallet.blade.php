@@ -53,7 +53,7 @@
                             <label for="wallet_currency">@lang('Default wallet currency')</label>
                             <select id="wallet_currency" name="wallet_currency" class="form-control" required>
                                 @foreach($currencies as $code => $details)
-                                    <option value="{{ $code }}" {{ $currency === $code ? 'selected' : '' }}>
+                                    <option value="{{ $code }}" {{ $targetCurrency === $code ? 'selected' : '' }}>
                                         {{ $details['name'] }} ({{ $code }})
                                     </option>
                                 @endforeach
