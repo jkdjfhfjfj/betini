@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `currency_rates` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `currency_code` CHAR(3) NOT NULL,
     `usd_to_currency` DECIMAL(20,10) NOT NULL,
-    `source` VARCHAR(40) NOT NULL DEFAULT 'currencylayer',
+    `source` VARCHAR(40) NOT NULL DEFAULT 'currencyapi_com',
     `fetched_at` TIMESTAMP NULL DEFAULT NULL,
     `created_at` TIMESTAMP NULL DEFAULT NULL,
     `updated_at` TIMESTAMP NULL DEFAULT NULL,

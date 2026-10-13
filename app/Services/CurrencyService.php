@@ -50,12 +50,12 @@ class CurrencyService
 
         $rate = CurrencyRate::where('currency_code', $currencyCode)->first();
         if (!$rate || (float)$rate->usd_to_currency <= 0) {
-            throw new RuntimeException('No USD exchange rate is available for ' . $currencyCode . '. Configure the CurrencyLayer access key and update rates before converting balances.');
+            throw new RuntimeException('No USD exchange rate is available for ' . $currencyCode . '. Configure the CurrencyAPI.com API key and update rates before converting balances.');
         }
-        if ($rate->source !== 'currencylayer'
+        if ($rate->source !== 'currencyapi_com'
             || !$rate->fetched_at
             || \Carbon\Carbon::parse($rate->fetched_at)->lt(now()->subHours(48))) {
-            throw new RuntimeException('The USD exchange rate for ' . $currencyCode . ' is missing or stale. Configure CurrencyLayer and update rates before converting balances.');
+            throw new RuntimeException('The USD exchange rate for ' . $currencyCode . ' is missing or stale. Configure CurrencyAPI.com and update rates before converting balances.');
         }
 
         return (float)$rate->usd_to_currency;
@@ -85,9 +85,12 @@ class CurrencyService
 
     public function conversionFeePercent()
     {
-        $settings = PaymentProviderSetting::forProvider('currencylayer')->settings;
+        $settings = PaymentProviderSetting::forProvider('currencyapi_com')->settings;
         if (!array_key_exists('conversion_fee_percent', $settings)) {
-            $legacySettings = PaymentProviderSetting::forProvider('currencyapi')->settings;
+            $legacySettings = PaymentProviderSetting::forProvider('currencylayer')->settings;
+            if (!array_key_exists('conversion_fee_percent', $legacySettings)) {
+                $legacySettings = PaymentProviderSetting::forProvider('currencyapi')->settings;
+            }
             $settings['conversion_fee_percent'] = $legacySettings['conversion_fee_percent'] ?? 0;
         }
         $fee = $settings['conversion_fee_percent'] ?? 0;
@@ -212,7 +215,7 @@ class CurrencyService
             WalletProviderTransaction::create([
                 'user_id' => $lockedUser->id,
                 'reference' => 'WCV' . strtoupper(Str::random(18)),
-                'provider' => 'currencylayer',
+                'provider' => 'currencyapi_com',
                 'direction' => 'conversion',
                 'currency_code' => $targetCurrency,
                 'amount' => $grossAmount,

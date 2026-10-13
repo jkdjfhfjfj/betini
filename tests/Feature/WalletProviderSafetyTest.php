@@ -545,40 +545,47 @@ class WalletProviderSafetyTest extends TestCase
         $this->assertSame(1, Transaction::where('trx_id', $entry->reference)->count());
     }
 
-    public function test_currencylayer_refresh_saves_usd_source_quotes_for_native_wallets()
+    public function test_currencyapi_com_refresh_saves_usd_source_quotes_for_native_wallets_without_reusing_old_provider_key()
     {
         $currencies = array_diff(array_keys(config('currencies.supported', [])), ['USD']);
-        $quotes = [];
+        $rates = [];
         foreach ($currencies as $index => $currency) {
-            $quotes['USD' . $currency] = 100 + $index;
+            $rates[$currency] = [
+                'code' => $currency,
+                'value' => 100 + $index,
+            ];
         }
 
-        $this->saveProviderSettings('currencylayer', ['access_key' => 'test-currencylayer-access-key']);
+        $this->saveProviderSettings('currencylayer', [
+            'access_key' => 'old-currencylayer-key',
+            'conversion_fee_percent' => 1.25,
+        ]);
+        $this->saveProviderSettings('currencyapi_com', ['access_key' => 'test-currencyapi-com-key']);
+        $this->assertSame(1.25, app(CurrencyService::class)->conversionFeePercent());
         Http::fake([
-            'https://api.currencylayer.com/live*' => Http::response([
-                'success' => true,
-                'timestamp' => now()->timestamp,
-                'source' => 'USD',
-                'quotes' => $quotes,
+            'https://api.currencyapi.com/v3/latest*' => Http::response([
+                'meta' => ['last_updated_at' => now()->toIso8601String()],
+                'data' => $rates,
             ], 200),
         ]);
 
         $exitCode = \Illuminate\Support\Facades\Artisan::call('wallet:rates:update');
 
         $this->assertSame(0, $exitCode);
-        $this->assertEquals($quotes['USDKES'], (float)DB::table('currency_rates')
+        $this->assertEquals($rates['KES']['value'], (float)DB::table('currency_rates')
             ->where('currency_code', 'KES')
             ->value('usd_to_currency'));
-        $this->assertSame('currencylayer', DB::table('currency_rates')
+        $this->assertSame('currencyapi_com', DB::table('currency_rates')
             ->where('currency_code', 'KES')
             ->value('source'));
         Http::assertSent(function ($request) {
             $query = [];
             parse_str((string)parse_url($request->url(), PHP_URL_QUERY), $query);
 
-            return str_contains($request->url(), 'api.currencylayer.com/live')
-                && ($query['access_key'] ?? null) === 'test-currencylayer-access-key'
-                && ($query['source'] ?? null) === 'USD';
+            return str_contains($request->url(), 'api.currencyapi.com/v3/latest')
+                && in_array('test-currencyapi-com-key', $request->header('apikey'), true)
+                && ($query['base_currency'] ?? null) === 'USD'
+                && ($query['currencies'] ?? null) === implode(',', array_diff(array_keys(config('currencies.supported', [])), ['USD']));
         });
     }
 

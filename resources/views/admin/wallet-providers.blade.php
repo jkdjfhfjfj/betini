@@ -125,26 +125,26 @@
                             </div>
                             <div class="col-lg-6">
                                 <div class="border rounded p-3 mb-3">
-                                    <h6>CurrencyLayer — wallet exchange rates</h6>
+                                    <h6>CurrencyAPI.com — wallet exchange rates</h6>
                                     <p class="text-muted">
                                         Wallet rates use USD as the source currency and are stored against your supported wallet currencies.
-                                        Start at <a href="https://currencylayer.com" target="_blank" rel="noopener">CurrencyLayer</a>
-                                        and review its <a href="https://currencylayer.com/documentation" target="_blank" rel="noopener">API documentation</a>.
-                                        The access key is encrypted and never displayed after saving.
+                                        Create an account at <a href="https://currencyapi.com/" target="_blank" rel="noopener">CurrencyAPI.com</a>
+                                        and use its <a href="https://currencyapi.com/docs/latest/" target="_blank" rel="noopener">Latest Exchange Rates API documentation</a>.
+                                        The API key is encrypted and never displayed after saving.
                                     </p>
                                     <ol class="small text-muted pl-3">
-                                        <li>Create a CurrencyLayer account and copy its access key.</li>
-                                        <li>Confirm your account plan supports USD as the source and the target currencies enabled here.</li>
-                                        <li>Paste the key below, set the wallet conversion fee, and save.</li>
-                                        <li>Use “Update CurrencyLayer rates now” to fetch the first rates. Later refreshes run on the app schedule.</li>
+                                        <li>Create an account and generate an API key in your CurrencyAPI.com dashboard.</li>
+                                        <li>Confirm your plan includes USD-based rates for every supported wallet currency.</li>
+                                        <li>Paste the key below, set the wallet conversion fee, and save. The app sends the key in the <code>apikey</code> request header.</li>
+                                        <li>Use “Update CurrencyAPI.com rates now” for the first rates. Later refreshes run on the app schedule.</li>
                                     </ol>
-                                    <label for="currencylayer_access_key">CurrencyLayer access key</label>
-                                    <input id="currencylayer_access_key" class="form-control mb-2" type="password" name="currencylayer[access_key]" autocomplete="new-password">
-                                    <div class="mb-3">Access key: <strong>{{ !empty($settings['currencylayer']['configured']) ? 'Saved' : 'Not set' }}</strong></div>
+                                    <label for="currencyapi_com_access_key">CurrencyAPI.com API key</label>
+                                    <input id="currencyapi_com_access_key" class="form-control mb-2" type="password" name="currencyapi_com[access_key]" autocomplete="new-password">
+                                    <div class="mb-3">API key: <strong>{{ !empty($settings['currencyapi_com']['configured']) ? 'Saved' : 'Not set' }}</strong></div>
                                     <label for="conversion_fee_percent">Wallet conversion fee (%)</label>
                                     <input id="conversion_fee_percent" class="form-control" type="number"
-                                           name="currencylayer[conversion_fee_percent]" min="0" max="100" step="0.01"
-                                           value="{{ old('currencylayer.conversion_fee_percent', $settings['currencylayer']['conversion_fee_percent'] ?? 0) }}" required>
+                                           name="currencyapi_com[conversion_fee_percent]" min="0" max="100" step="0.01"
+                                           value="{{ old('currencyapi_com.conversion_fee_percent', $settings['currencyapi_com']['conversion_fee_percent'] ?? 0) }}" required>
                                     <small class="form-text text-muted">Shown to the user in a confirmation quote and deducted from the converted amount.</small>
                                 </div>
                             </div>
@@ -203,13 +203,13 @@
 
         <div class="col-12">
             <div class="alert alert-secondary">
-                Wallet conversion uses CurrencyLayer USD-source rates. Last successful wallet-rate update:
+                Wallet conversion uses CurrencyAPI.com USD-source rates. Last successful wallet-rate update:
                 <strong>{{ $lastWalletRateUpdate ? \Carbon\Carbon::parse($lastWalletRateUpdate)->format('Y-m-d H:i') : 'Not yet updated' }}</strong>.
                 Save a key and fee above, then update rates:
                 @if(adminAccessRoute(config('role.payment_gateway.access.edit')))
                     <form method="post" action="{{ route('admin.wallet-providers.rates') }}" class="d-inline-block ml-2">
                         @csrf
-                        <button class="btn btn-sm btn-outline-primary" type="submit">Update CurrencyLayer rates now</button>
+                        <button class="btn btn-sm btn-outline-primary" type="submit">Update CurrencyAPI.com rates now</button>
                     </form>
                 @endif
                 The server's public <code>APP_URL</code> must also use HTTPS so payment callbacks can be registered securely.

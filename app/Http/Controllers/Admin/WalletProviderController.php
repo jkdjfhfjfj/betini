@@ -42,19 +42,23 @@ class WalletProviderController extends Controller
             }
         }
         try {
-            $currencyLayer = PaymentProviderSetting::forProvider('currencylayer')->settings;
+            $currencyApiSettings = PaymentProviderSetting::forProvider('currencyapi_com')->settings;
+            $legacyCurrencyLayer = PaymentProviderSetting::forProvider('currencylayer')->settings;
             $legacyCurrencyApi = PaymentProviderSetting::forProvider('currencyapi')->settings;
-            $settings['currencylayer'] = [
-                'configured' => !empty($currencyLayer['access_key']),
-                'conversion_fee_percent' => array_key_exists('conversion_fee_percent', $currencyLayer)
-                    ? $currencyLayer['conversion_fee_percent']
-                    : ($legacyCurrencyApi['conversion_fee_percent'] ?? 0),
+            $conversionFee = array_key_exists('conversion_fee_percent', $currencyApiSettings)
+                ? $currencyApiSettings['conversion_fee_percent']
+                : (array_key_exists('conversion_fee_percent', $legacyCurrencyLayer)
+                    ? $legacyCurrencyLayer['conversion_fee_percent']
+                    : ($legacyCurrencyApi['conversion_fee_percent'] ?? 0));
+            $settings['currencyapi_com'] = [
+                'configured' => !empty($currencyApiSettings['access_key']),
+                'conversion_fee_percent' => $conversionFee,
             ];
-            $lastWalletRateUpdate = CurrencyRate::where('source', 'currencylayer')->max('fetched_at');
+            $lastWalletRateUpdate = CurrencyRate::where('source', 'currencyapi_com')->max('fetched_at');
         } catch (\Throwable $exception) {
-            $settings['currencylayer'] = ['configured' => false, 'conversion_fee_percent' => 0];
+            $settings['currencyapi_com'] = ['configured' => false, 'conversion_fee_percent' => 0];
             $lastWalletRateUpdate = null;
-            $configurationWarning = 'CurrencyLayer settings or wallet rates could not be read. Check the database and server APP_KEY.';
+            $configurationWarning = 'CurrencyAPI.com settings or wallet rates could not be read. Check the database and server APP_KEY.';
         }
 
         try {
@@ -96,8 +100,8 @@ class WalletProviderController extends Controller
             'payza.webhook_secret' => 'nullable|string|max:500',
             'paystack.secret_key' => 'nullable|string|max:500',
             'makamesco.api_key' => 'nullable|string|max:500',
-            'currencylayer.access_key' => 'nullable|string|max:500',
-            'currencylayer.conversion_fee_percent' => 'required|numeric|between:0,100',
+            'currencyapi_com.access_key' => 'nullable|string|max:500',
+            'currencyapi_com.conversion_fee_percent' => 'required|numeric|between:0,100',
         ]);
 
         try {
@@ -107,7 +111,7 @@ class WalletProviderController extends Controller
                     'payza' => ['public_key', 'secret_key', 'webhook_secret'],
                     'paystack' => ['secret_key'],
                     'makamesco' => ['api_key'],
-                    'currencylayer' => ['access_key', 'conversion_fee_percent'],
+                    'currencyapi_com' => ['access_key', 'conversion_fee_percent'],
                 ] as $provider => $fields) {
                     $record = PaymentProviderSetting::forProvider($provider);
                     $values = $record->settings;
@@ -152,18 +156,18 @@ class WalletProviderController extends Controller
 
     public function updateRates()
     {
-        $settings = PaymentProviderSetting::forProvider('currencylayer')->settings;
+        $settings = PaymentProviderSetting::forProvider('currencyapi_com')->settings;
         if (empty($settings['access_key'])) {
-            return back()->with('error', 'Save a CurrencyLayer access key before updating wallet rates.');
+            return back()->with('error', 'Save a CurrencyAPI.com API key before updating wallet rates.');
         }
 
         $exitCode = Artisan::call('wallet:rates:update');
         if ($exitCode !== 0) {
-            return back()->with('error', trim(Artisan::output()) ?: 'CurrencyLayer did not return usable rates.');
+            return back()->with('error', trim(Artisan::output()) ?: 'CurrencyAPI.com did not return usable rates.');
         }
 
         return redirect()->route('admin.wallet-providers')
-            ->with('success', 'CurrencyLayer wallet rates were updated. ' . trim(Artisan::output()));
+            ->with('success', 'CurrencyAPI.com wallet rates were updated. ' . trim(Artisan::output()));
     }
 
     public function registerPayHeroChannel(Request $request)

@@ -29,6 +29,7 @@ class WalletManualController extends Controller
             'makamesco' => 'Makamesco',
             'currencyapi' => 'Currency conversion',
             'currencylayer' => 'Currency conversion',
+            'currencyapi_com' => 'CurrencyAPI.com conversion',
         ];
 
         $query = WalletProviderTransaction::with('user')
