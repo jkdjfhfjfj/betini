@@ -2,7 +2,7 @@
 
 namespace App\Http\Traits;
 
-use Intervention\Image\Facades\Image;
+use Intervention\Image\ImageManagerStatic as Image;
 
 trait Upload
 {
@@ -19,30 +19,38 @@ trait Upload
 
     public function uploadImage($file, $location, $size = null, $old = null, $thumb = null, $filename = null)
     {
-        $path = $this->makeDirectory($location);
-        if (!$path) throw new \Exception('File could not been created.');
-
-        if (!empty($old)) {
-            $this->removeFile($location . '/' . $old);
-            $this->removeFile($location . '/thumb_' . $old);
+        if (!$file || !method_exists($file, 'getRealPath')) {
+            throw new \InvalidArgumentException('A valid image upload is required.');
         }
+
+        $location = rtrim($location, '/');
+        $path = $this->makeDirectory($location);
+        if (!$path) throw new \RuntimeException('Upload directory could not be created.');
 
         if ($filename == null) {
-            $filename = uniqid() . time() . '.' . $file->getClientOriginalExtension();
+            $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+            $filename = \Illuminate\Support\Str::random(32) . '.' . $extension;
         }
 
-        $image = Image::make($file);
+        $image = Image::make($file->getRealPath());
 
         if (!empty($size)) {
             $size = explode('x', strtolower($size));
             $image->resize($size[0], $size[1]);
         }
-        $image->save($location . '/' . $filename);
+        $image->save($location . '/' . $filename, 90);
 
         if (!empty($thumb)) {
             $thumb = explode('x', $thumb);
-            Image::make($file)->resize($thumb[0], $thumb[1])->save($location . '/thumb_' . $filename);
+            Image::make($file->getRealPath())->resize($thumb[0], $thumb[1])->save($location . '/thumb_' . $filename, 90);
         }
+
+        // Keep the previous image until the replacement and its thumbnail are safely written.
+        if (!empty($old) && $old !== $filename) {
+            $this->removeFile($location . '/' . $old);
+            $this->removeFile($location . '/thumb_' . $old);
+        }
+
         return $filename;
     }
 

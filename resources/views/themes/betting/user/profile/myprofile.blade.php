@@ -11,9 +11,9 @@
                         <div class="form-group">
                             @csrf
                             <div class="image-input ">
-                                <label for="image-upload" id="image-label"><i
+                                <label for="user-profile-image" id="image-label"><i
                                         class="fas fa-upload"></i></label>
-                                <input type="file" name="image" placeholder="Choose image" id="image">
+                                <input type="file" name="image" placeholder="Choose image" id="user-profile-image" accept=".jpg,.jpeg,.png">
                                 <img id="image_preview_container" class="preview-image"
                                      src="{{getFile(config('location.user.path').$user->image)}}"
                                      alt="preview image">

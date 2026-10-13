@@ -46,11 +46,11 @@ class ContentController extends Controller
 
         $purifiedData = Purify::clean($request->except('image', 'thumbnail', '_token', '_method'));
 
-        if ($request->has('image')) {
-            $purifiedData['image'] = $request->image;
+        if ($request->hasFile('image')) {
+            $purifiedData['image'] = $request->file('image');
         }
-        if ($request->has('thumbnail')) {
-            $purifiedData['thumbnail'] = $request->thumbnail;
+        if ($request->hasFile('thumbnail')) {
+            $purifiedData['thumbnail'] = $request->file('thumbnail');
         }
 
         $validate = Validator::make($purifiedData, config("contents.$content.validation"), config('contents.message'));
@@ -81,11 +81,16 @@ class ContentController extends Controller
         }
 
         // save content media
-        if ($request->hasAny(array_keys(config('contents.content_media')))) {
+        $hasContentMedia = $request->hasAny(array_keys(config('contents.content_media')))
+            || $request->hasFile('image')
+            || $request->hasFile('thumbnail');
+
+        if ($hasContentMedia) {
             $contentMedia = new ContentMedia();
 
             foreach (config('contents.content_media') as $key => $media) {
-                if ($request->hasFile($key)) {
+                $uploadedFile = $request->file($key . '.' . $language);
+                if ($uploadedFile) {
                     $size =  null;
                     $thumb =  null;
                     if(config("contents.$content.size.image")){
@@ -95,9 +100,10 @@ class ContentController extends Controller
                         $thumb = config("contents.$content.size.thumb");
                     }
 
-                    $contentMediaDescription[$key] = $this->uploadImage($purifiedData[$key][$language], config('location.content.path'), $size, null, $thumb);
+                    $contentMediaDescription[$key] = $this->uploadImage($uploadedFile, config('location.content.path'), $size, null, $thumb);
                 } elseif ($request->has($key)) {
-                    $contentMediaDescription[$key] = linkToEmbed($purifiedData[$key][$language]);
+                    $mediaValue = data_get($purifiedData, $key . '.' . $language);
+                    $contentMediaDescription[$key] = trim((string) $mediaValue) === '' ? null : linkToEmbed($mediaValue);
                 }
             }
 
@@ -132,11 +138,11 @@ class ContentController extends Controller
 
         $purifiedData = Purify::clean($request->except('image', 'thumbnail', '_token', '_method'));
 
-        if ($request->has('image')) {
-            $purifiedData['image'] = $request->image;
+        if ($request->hasFile('image')) {
+            $purifiedData['image'] = $request->file('image');
         }
-        if ($request->has('thumbnail')) {
-            $purifiedData['thumbnail'] = $request->thumbnail;
+        if ($request->hasFile('thumbnail')) {
+            $purifiedData['thumbnail'] = $request->file('thumbnail');
         }
 
         $validate = Validator::make($purifiedData, config("contents.$content->name.validation"), config('contents.message'));
@@ -162,13 +168,18 @@ class ContentController extends Controller
 
 
         // save contents media
-        if ($request->hasAny(array_keys(config('contents.content_media')))) {
+        $hasContentMedia = $request->hasAny(array_keys(config('contents.content_media')))
+            || $request->hasFile('image')
+            || $request->hasFile('thumbnail');
+
+        if ($hasContentMedia) {
             $contentMedia = ContentMedia::where(['content_id' => $content->id])->firstOrNew();
             $contentMediaDescription = (array)($contentMedia->description ?: []);
 
             foreach (config('contents.content_media') as $key => $media) {
                 $old_data = $contentMediaDescription[$key] ?? (optional($contentMedia->description)->{$key} ?? null);
-                if ($request->hasFile($key)) {
+                $uploadedFile = $request->file($key . '.' . $language);
+                if ($uploadedFile) {
                     $size =  null;
                     $thumb =  null;
                     if(config("contents.$content->name.size.image")){
@@ -178,7 +189,7 @@ class ContentController extends Controller
                         $thumb = config("contents.$content->name.size.thumb");
                     }
 
-                    $contentMediaDescription[$key] = $this->uploadImage($purifiedData[$key][$language], config('location.content.path'), $size, $old_data, $thumb);
+                    $contentMediaDescription[$key] = $this->uploadImage($uploadedFile, config('location.content.path'), $size, $old_data, $thumb);
                 } elseif ($request->has($key)) {
                     $mediaValue = data_get($purifiedData, $key . '.' . $language);
                     $contentMediaDescription[$key] = trim((string)$mediaValue) === '' ? null : linkToEmbed($mediaValue);

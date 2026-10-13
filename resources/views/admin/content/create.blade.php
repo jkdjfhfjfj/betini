@@ -33,9 +33,9 @@
                                                 <div class="form-group">
                                                     <label for="{{ @$name }}">  @lang(ucwords(str_replace('_',' ',$name))) </label>
                                                     <div class="image-input ">
-                                                        <label for="image-upload" id="image-label"><i class="fas fa-upload"></i></label>
-                                                        <input type="file"  placeholder="Choose image" class="image-preview" id="{{ $name }}" name="{{ $name }}[0]">
-                                                        <img id="image_preview_container" class="preview-image" src="{{getFile(config('location.content.path').(isset($templateMedia->description->{$name}) ? $templateMedia->description->{$name} : ''))}}"
+                                                        <label for="content-image-{{ $name }}-0"><i class="fas fa-upload"></i></label>
+                                                        <input type="file" placeholder="Choose image" class="image-preview" id="content-image-{{ $name }}-0" name="{{ $name }}[0]">
+                                                        <img id="content-preview-{{ $name }}-0" class="preview-image" src="{{getFile(config('location.content.path').(isset($templateMedia->description->{$name}) ? $templateMedia->description->{$name} : ''))}}"
                                                              alt="preview image">
                                                     </div>
                                                     @error($name.'.0') <span class="text-danger"> @lang($message)</span> @enderror
@@ -118,9 +118,9 @@
                                                             <div class="form-group">
                                                                 <label for="{{ @$name }}"> @lang(ucwords(str_replace('_',' ',@$name))) </label>
                                                                 <div class="image-input ">
-                                                                    <label for="image-upload" id="image-label"><i class="fas fa-upload"></i></label>
-                                                                    <input type="file"  placeholder="Choose image" class="image-preview"  id="{{$name}}" name="{{ $name }}[{{ $language->id }}]">
-                                                                    <img id="image_preview_container" class="preview-image" src="{{getFile(config('location.default'))}}"
+                                                                    <label for="content-image-{{ $name }}-{{ $language->id }}"><i class="fas fa-upload"></i></label>
+                                                                    <input type="file" placeholder="Choose image" class="image-preview" id="content-image-{{ $name }}-{{ $language->id }}" name="{{ $name }}[{{ $language->id }}]">
+                                                                    <img id="content-preview-{{ $name }}-{{ $language->id }}" class="preview-image" src="{{getFile(config('location.default'))}}"
                                                                          alt="preview image">
                                                                 </div>
 
@@ -216,10 +216,12 @@
         $(document).ready(function () {
 
 
-            $('.image-preview').change(function(){
+            $('.image-preview').on('change', function(){
+                if (!this.files || !this.files[0]) return;
                 let reader = new FileReader();
+                const preview = $(this).closest('.source-parent').find('.preview-image').first();
                 reader.onload = (e) => {
-                    $('#image_preview_container').attr('src', e.target.result);
+                    preview.attr('src', e.target.result);
                 }
                 reader.readAsDataURL(this.files[0]);
             });

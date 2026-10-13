@@ -84,6 +84,29 @@
 
 <script>
     'use strict';
+    // Keep admin image pickers working even on legacy forms with mismatched label ids.
+    document.addEventListener('click', function (event) {
+        const label = event.target.closest('.image-input label');
+        if (!label) return;
+        const picker = label.closest('.image-input')?.querySelector('input[type="file"]');
+        if (picker && label.htmlFor !== picker.id) {
+            event.preventDefault();
+            picker.click();
+        }
+    });
+    document.addEventListener('change', function (event) {
+        const picker = event.target;
+        if (!(picker instanceof HTMLInputElement) || picker.type !== 'file' || !picker.closest('.image-input')) return;
+        const file = picker.files && picker.files[0];
+        const preview = picker.closest('.image-input').querySelector('img.preview-image');
+        if (!file || !preview || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function (loadEvent) {
+            preview.src = loadEvent.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
     let pushNotificationArea = new Vue({
         el: "#pushNotificationArea",
         data: {

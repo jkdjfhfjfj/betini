@@ -96,7 +96,7 @@ document.querySelectorAll("[data-home-promo-carousel]").forEach((carousel) => {
     let activeIndex = 0;
     let timer = null;
     let scrollFrame = null;
-    let paused = prefersReducedMotion;
+    let paused = false;
 
     const updateControls = () => {
         dots.forEach((dot, index) => {
@@ -122,7 +122,7 @@ document.querySelectorAll("[data-home-promo-carousel]").forEach((carousel) => {
 
     const startTimer = () => {
         stopTimer();
-        if (paused || prefersReducedMotion || document.hidden) return;
+        if (paused || document.hidden) return;
         timer = window.setInterval(() => goTo(activeIndex + 1), 5500);
     };
 

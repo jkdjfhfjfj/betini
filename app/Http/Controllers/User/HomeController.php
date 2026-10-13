@@ -199,33 +199,19 @@ class HomeController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $allowedExtensions = array('jpg', 'png', 'jpeg');
-
-        $image = $request->image;
         $this->validate($request, [
-            'image' => [
-                'required',
-                'max:4096',
-                function ($fail) use ($image, $allowedExtensions) {
-                    $ext = strtolower($image->getClientOriginalExtension());
-                    if (($image->getSize() / 1000000) > 2) {
-                        return $fail("Images MAX  2MB ALLOW!");
-                    }
-                    if (!in_array($ext, $allowedExtensions)) {
-                        return $fail("Only png, jpg, jpeg images are allowed");
-                    }
-                }
-            ]
+            'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
+
         $user = $this->user;
-        if ($request->hasFile('image')) {
-            $path = config('location.user.path');
-            try {
-                $user->image = $this->uploadImage($image, $path);
-            } catch (\Exception $exp) {
-                return back()->with('error', 'Could not upload your ' . $image)->withInput();
-            }
+        try {
+            $user->image = $this->uploadImage($request->file('image'), config('location.user.path'));
+        } catch (\Throwable $exception) {
+            report($exception);
+            return back()->withErrors(['image' => __('The image could not be saved. Please try a JPG or PNG under 2 MB.')])
+                ->withInput();
         }
+
         $user->save();
         return back()->with('success', 'Updated Successfully.');
     }

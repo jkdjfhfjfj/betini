@@ -28,7 +28,11 @@
                 aria-controls="moreSportsMenu"
                 aria-expanded="false"
                 onclick="window.toggleSportsMore(this)">
-            <i class="fal fa-ellipsis-h" aria-hidden="true"></i>
+            <svg class="category-more-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="5" cy="12" r="1.7"></circle>
+                <circle cx="12" cy="12" r="1.7"></circle>
+                <circle cx="19" cy="12" r="1.7"></circle>
+            </svg>
             <span>@lang('More')</span>
         </button>
     </div>
