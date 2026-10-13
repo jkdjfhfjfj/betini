@@ -22,22 +22,44 @@
     <script src="<?php echo e(asset('assets/admin/js/fontawesome/fontawesomepro.js')); ?>"></script>
 
     <link rel="stylesheet" type="text/css" href="<?php echo e(asset($themeTrue . 'css/style.css')); ?>"/>
-    <link rel="stylesheet" type="text/css" href="<?php echo e(asset($themeTrue . 'css/sportsbook.css')); ?>"/>
+    <link rel="stylesheet" type="text/css" href="<?php echo e(asset($themeTrue . 'css/sportsbook.css')); ?>?v=<?php echo e(filemtime(base_path($themeTrue . 'css/sportsbook.css'))); ?>"/>
 
 
     <?php echo $__env->yieldPushContent('style'); ?>
 
 </head>
 
-<body <?php if(session()->get('dark-mode') == 'true'): ?> class="dark-mode" <?php endif; ?>>
+<?php
+    $isAuthScreen = request()->routeIs(
+        'login',
+        'register',
+        'register.sponsor',
+        'password.*',
+        'verification.*',
+        'confirm-password',
+        'user.check'
+    ) || request()->is(
+        'user',
+        'register/*',
+        'forgot-password',
+        'reset-password*',
+        'verify-email*',
+        'confirm-password',
+        'user/check'
+    );
+?>
+
+<body class="<?php if($isAuthScreen): ?> auth-screen <?php endif; ?> <?php if(session()->get('dark-mode') == 'true'): ?> dark-mode <?php endif; ?>">
 
 
-<?php echo $__env->make($theme.'partials.nav', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
-<?php echo $__env->make($theme.'partials.banner', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<?php if(!$isAuthScreen): ?>
+    <?php echo $__env->make($theme.'partials.nav', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <?php echo $__env->make($theme.'partials.banner', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<?php endif; ?>
 
 <?php echo $__env->yieldContent('content'); ?>
 
-<?php if(!in_array(Request::route()->getName(), ['home','category','tournament','match','login','register','register.sponsor','user.check','password.request'])): ?>
+<?php if(!$isAuthScreen && !in_array(Request::route()->getName(), ['home','category','tournament','match'])): ?>
     <?php echo $__env->make($theme.'partials.footer', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 <?php endif; ?>
 
@@ -45,7 +67,9 @@
 
 <?php echo $__env->yieldPushContent('extra-content'); ?>
 
-<?php echo $__env->make($theme.'partials.modal-form', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<?php if(!$isAuthScreen): ?>
+    <?php echo $__env->make($theme.'partials.modal-form', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<?php endif; ?>
 
 <script src="<?php echo e(asset($themeTrue . 'js/bootstrap.bundle.min.js')); ?>"></script>
 <script src="<?php echo e(asset($themeTrue . 'js/masonry.pkgd.min.js')); ?>"></script>
@@ -62,7 +86,7 @@
 <script src="<?php echo e(asset($themeTrue . 'js/jquery.counterup.min.js')); ?>"></script>
 <script src="<?php echo e(asset($themeTrue . 'js/aos.js')); ?>"></script>
 <script src="<?php echo e(asset($themeTrue . 'js/jquery.fancybox.min.js')); ?>"></script>
-<script src="<?php echo e(asset($themeTrue . 'js/script.js')); ?>"></script>
+<script src="<?php echo e(asset($themeTrue . 'js/script.js')); ?>?v=<?php echo e(filemtime(base_path($themeTrue . 'js/script.js'))); ?>"></script>
 
 
 <script src="<?php echo e(asset('assets/global/js/pusher.min.js')); ?>"></script>
