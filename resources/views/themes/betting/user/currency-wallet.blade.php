@@ -3,6 +3,9 @@
 @section('title', trans('Wallet'))
 
 @section('content')
+    @php
+        $activeWalletOperation = old('wallet_operation') === 'withdrawal' ? 'withdrawal' : 'deposit';
+    @endphp
     <div class="row g-3 wallet-page">
         <div class="col-12">
             @if(session('success'))
@@ -78,7 +81,33 @@
             </div>
         </div>
 
-        <div class="col-lg-6 wallet-flow-panel wallet-deposit-panel">
+        <div class="col-12">
+            <div class="wallet-operation-switcher" role="group" aria-label="Choose wallet action">
+                <button type="button"
+                        class="wallet-operation-choice"
+                        data-wallet-operation-choice="deposit"
+                        aria-pressed="{{ $activeWalletOperation === 'deposit' ? 'true' : 'false' }}">
+                    <span class="wallet-operation-choice-title">Deposit funds</span>
+                    <span class="wallet-operation-choice-description">Automatic and manual deposit options</span>
+                </button>
+                <button type="button"
+                        class="wallet-operation-choice"
+                        data-wallet-operation-choice="withdrawal"
+                        aria-pressed="{{ $activeWalletOperation === 'withdrawal' ? 'true' : 'false' }}">
+                    <span class="wallet-operation-choice-title">Withdraw funds</span>
+                    <span class="wallet-operation-choice-description">Provider and admin-reviewed withdrawals</span>
+                </button>
+            </div>
+            <p class="wallet-operation-help" id="wallet-operation-help" aria-live="polite">
+                @if($activeWalletOperation === 'withdrawal')
+                    Choose an automatic provider or submit a manual withdrawal request for review.
+                @else
+                    Choose an automatic provider or an admin-managed manual deposit option.
+                @endif
+            </p>
+        </div>
+
+        <div class="col-lg-6 wallet-flow-panel wallet-deposit-panel" id="wallet-deposit-automatic" data-wallet-operation-panel="deposit">
             <div class="card secbg br-4 h-100">
                 <div class="card-body">
                     <h4>@lang('Deposit')</h4>
@@ -93,6 +122,7 @@
                     </p>
                     <form method="post" action="{{ route('user.wallet.deposit') }}">
                         @csrf
+                        <input type="hidden" name="wallet_operation" value="deposit">
                         <div class="form-group mb-3">
                             <label for="deposit_amount">@lang('Amount') ({{ $currency }})</label>
                             <input id="deposit_amount" class="form-control" type="number" name="amount" min="{{ $depositProvider === 'payhero' ? '1' : '0.01' }}" step="{{ $depositProvider === 'payhero' ? '1' : '0.01' }}" value="{{ old('amount') }}" required>
@@ -137,7 +167,7 @@
             </div>
         </div>
 
-        <div class="col-lg-6 wallet-flow-panel wallet-withdraw-panel">
+        <div class="col-lg-6 wallet-flow-panel wallet-withdraw-panel" id="wallet-withdraw-automatic" data-wallet-operation-panel="withdrawal">
             <div class="card secbg br-4 h-100">
                 <div class="card-body">
                     <h4>@lang('Withdraw')</h4>
@@ -146,6 +176,7 @@
                     </p>
                     <form method="post" action="{{ route('user.wallet.withdraw') }}">
                         @csrf
+                        <input type="hidden" name="wallet_operation" value="withdrawal">
                         <div class="form-group mb-3">
                             <label for="withdraw_amount">@lang('Amount') ({{ $currency }})</label>
                             <input id="withdraw_amount" class="form-control" type="number" name="amount" min="0.01" step="0.01" value="{{ old('amount') }}" required>
@@ -202,7 +233,7 @@
         </div>
 
         @if($manualDepositGateways->isNotEmpty())
-            <div class="col-lg-6 wallet-flow-panel wallet-manual-deposit-panel">
+            <div class="col-lg-6 wallet-flow-panel wallet-manual-deposit-panel" id="wallet-deposit-manual" data-wallet-operation-panel="deposit">
                 <div class="card secbg br-4 h-100">
                     <div class="card-body">
                         <h4>@lang('Manual deposit options') ({{ $currency }})</h4>
@@ -226,6 +257,7 @@
                                       data-fixed-charge="{{ max(0, (float)$manualGateway->fixed_charge) }}"
                                       data-percentage-charge="{{ max(0, (float)$manualGateway->percentage_charge) }}">
                                     @csrf
+                                    <input type="hidden" name="wallet_operation" value="deposit">
                                     <input type="hidden" name="gateway_id" value="{{ $manualGateway->id }}">
                                     <div class="form-group mb-3">
                                         <label for="manual_amount_{{ $manualGateway->id }}">@lang('Wallet credit amount') ({{ $currency }})</label>
@@ -279,13 +311,14 @@
             </div>
         @endif
 
-        <div class="col-lg-6 wallet-flow-panel wallet-manual-withdraw-panel">
+        <div class="col-lg-6 wallet-flow-panel wallet-manual-withdraw-panel" id="wallet-withdraw-manual" data-wallet-operation-panel="withdrawal">
             <div class="card secbg br-4 h-100">
                 <div class="card-body">
                     <h4>@lang('Manual withdrawal') ({{ $currency }})</h4>
                     <p class="text-muted">An administrator will review this payout request. The amount is reserved now; rejected requests are refunded to this wallet.</p>
                     <form method="post" action="{{ route('user.wallet.manual-withdraw') }}">
                         @csrf
+                        <input type="hidden" name="wallet_operation" value="withdrawal">
                         <div class="form-group mb-3">
                             <label for="manual_withdraw_amount">@lang('Amount') ({{ $currency }})</label>
                             <input id="manual_withdraw_amount" class="form-control" type="number" name="amount"
@@ -494,6 +527,31 @@
                 }
             });
         })();
+
+        const walletOperationButtons = document.querySelectorAll('[data-wallet-operation-choice]');
+        const walletOperationPanels = document.querySelectorAll('[data-wallet-operation-panel]');
+        const walletOperationHelp = document.getElementById('wallet-operation-help');
+        const walletOperationDescriptions = {
+            deposit: 'Choose an automatic provider or an admin-managed manual deposit option.',
+            withdrawal: 'Choose an automatic provider or submit a manual withdrawal request for review.'
+        };
+        const setWalletOperation = function (operation) {
+            walletOperationButtons.forEach(function (button) {
+                button.setAttribute('aria-pressed', button.dataset.walletOperationChoice === operation ? 'true' : 'false');
+            });
+            walletOperationPanels.forEach(function (panel) {
+                panel.hidden = panel.dataset.walletOperationPanel !== operation;
+            });
+            if (walletOperationHelp && walletOperationDescriptions[operation]) {
+                walletOperationHelp.textContent = walletOperationDescriptions[operation];
+            }
+        };
+        walletOperationButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                setWalletOperation(button.dataset.walletOperationChoice);
+            });
+        });
+        setWalletOperation(@json($activeWalletOperation));
 
         document.querySelectorAll('.manual-wallet-deposit-form').forEach(function (form) {
             const amountInput = form.querySelector('.manual-wallet-amount');
