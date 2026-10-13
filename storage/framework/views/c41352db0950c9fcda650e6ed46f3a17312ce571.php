@@ -176,8 +176,14 @@
             <span class="nav-label"><?php echo app('translator')->get('Live'); ?></span>
         </a>
 
-        <a href="javascript:void(0)" class="text-dark bet-slip-link"
-           aria-label="<?php echo app('translator')->get('Bet Slip'); ?>" onclick="toggleSidebar('rightbar')">
+        <?php if(Request::routeIs('home', 'category', 'tournament', 'match')): ?>
+            <a href="#rightbar" class="text-dark bet-slip-link"
+               aria-label="<?php echo app('translator')->get('Bet Slip'); ?>" aria-controls="rightbar"
+               onclick="window.toggleSidebar('rightbar'); return false;">
+        <?php else: ?>
+            <a href="<?php echo e(route('home', ['panel' => 'betslip'])); ?>" class="text-dark bet-slip-link"
+               aria-label="<?php echo app('translator')->get('Open bet slip'); ?>" aria-controls="rightbar">
+        <?php endif; ?>
             <i class="fal fa-ticket-alt"></i>
             <span class="nav-label"><?php echo app('translator')->get('Bet Slip'); ?></span>
         </a>
@@ -185,7 +191,7 @@
         <?php if(auth()->guard()->check()): ?>
             <a href="<?php echo e(route('user.betHistory')); ?>" class="text-dark <?php echo e(Request::routeIs('user.betHistory') ? 'active' : ''); ?>" <?php if(Request::routeIs('user.betHistory')): ?> aria-current="page" <?php endif; ?>>
                 <i class="fal fa-receipt"></i>
-                <span class="nav-label"><?php echo app('translator')->get('My Bets'); ?></span>
+                <span class="nav-label"><?php echo app('translator')->get('Bet History'); ?></span>
             </a>
             <a href="<?php echo e(route('user.profile')); ?>" class="text-dark <?php echo e(Request::routeIs('user.profile') ? 'active' : ''); ?>" <?php if(Request::routeIs('user.profile')): ?> aria-current="page" <?php endif; ?>>
                 <i class="fal fa-user"></i>
@@ -194,7 +200,7 @@
         <?php else: ?>
             <a href="<?php echo e(route('login')); ?>" class="text-dark">
                 <i class="fal fa-receipt"></i>
-                <span class="nav-label"><?php echo app('translator')->get('My Bets'); ?></span>
+                <span class="nav-label"><?php echo app('translator')->get('Bet History'); ?></span>
             </a>
             <a href="<?php echo e(route('login')); ?>" class="text-dark">
                 <i class="fal fa-user"></i>
