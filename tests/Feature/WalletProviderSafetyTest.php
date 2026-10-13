@@ -331,6 +331,46 @@ class WalletProviderSafetyTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_makamesco_403_shows_safe_provider_reason_and_refunds_the_reserved_amount()
+    {
+        $user = $this->createUser(100, 'KES');
+        $this->actingAs($user);
+        $this->saveProviderSettings('makamesco', ['api_key' => 'makamesco-test-key']);
+
+        Http::fake([
+            'https://makamescopay.com/api/payments/b2c' => Http::response([
+                'message' => 'B2C disbursements are not enabled for this account. Received key sk_live_sensitivevalue.',
+            ], 403),
+        ]);
+
+        $request = Request::create('/user/wallet/withdraw', 'POST', [
+            'amount' => 50,
+            'account_name' => 'Test Wallet User',
+            'account_number' => '0712345678',
+            'method' => 'mpesa',
+        ]);
+        $response = app(WalletController::class)->withdraw($request);
+
+        $entry = WalletProviderTransaction::where('user_id', $user->id)
+            ->where('direction', 'withdrawal')
+            ->firstOrFail();
+        $this->assertSame('failed', $entry->status);
+        $this->assertNotNull($entry->refunded_at);
+        $this->assertEquals(100, (float)$user->fresh()->balance);
+        $this->assertStringContainsString(
+            'B2C disbursements are not enabled',
+            (string)$response->getSession()->get('error')
+        );
+        $this->assertStringNotContainsString(
+            'makamesco-test-key',
+            (string)$response->getSession()->get('error')
+        );
+        $this->assertStringNotContainsString(
+            'sk_live_sensitivevalue',
+            (string)$response->getSession()->get('error')
+        );
+    }
+
     public function test_paystack_webhook_requires_a_valid_signature_and_credits_a_verified_charge_only_once()
     {
         $user = $this->createUser(7, 'USD');

@@ -9,7 +9,7 @@
                 <div class="row align-items-center">
                     <div class="col-lg-6">
                         <div class="img-box">
-                            <img src="{{getFile(config('location.content.path').@$about_us->templateMedia()->image)}}"
+                            <img src="{{getFile(config('location.content.path') . data_get($about_us, 'description.image'))}}"
                                  alt="..." class="img-fluid"/>
                         </div>
                     </div>

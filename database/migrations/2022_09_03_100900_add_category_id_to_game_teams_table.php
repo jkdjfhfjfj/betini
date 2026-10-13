@@ -13,11 +13,13 @@ class AddCategoryIdToGameTeamsTable extends Migration
      */
     public function up()
     {
-        Schema::table('game_teams', function (Blueprint $table) {
-            $table->unsignedBigInteger('category_id');
-            $table->foreign('category_id')
-                ->references('id')->on('game_categories')->onDelete('cascade');
-        });
+        if (!Schema::hasColumn('game_teams', 'category_id')) {
+            Schema::table('game_teams', function (Blueprint $table) {
+                $table->unsignedBigInteger('category_id')->nullable();
+                $table->foreign('category_id')
+                    ->references('id')->on('game_categories')->onDelete('cascade');
+            });
+        }
     }
 
     /**

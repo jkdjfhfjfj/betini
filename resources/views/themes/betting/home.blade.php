@@ -79,6 +79,10 @@
                 </div>
 
                 <div class="match-filter-toolbar" role="group" aria-label="@lang('Match filters')">
+                    <button type="button" class="match-filter-button match-filter-all"
+                            :class="{active: allFiltersActive()}"
+                            :aria-pressed="allFiltersActive()"
+                            @click="resetFeedFilters">@lang('All')</button>
                     <div class="match-filter-menu">
                         <button type="button" class="match-filter-button"
                                 @click="toggleFeedMenu('filters')"
@@ -549,11 +553,19 @@
                     this.openFeedMenu = null;
                 },
                 resetFeedFilters() {
-                    this.dateFilter = 'today';
-                    this.marketGroupFilter = 'highlights';
-                    this.oddsMarketFilter = '1x2';
+                    this.dateFilter = 'all';
+                    this.marketGroupFilter = 'all';
+                    this.oddsMarketFilter = 'all';
                     this.onlyAvailableOdds = false;
+                    this.countryFilter = '';
                     this.openFeedMenu = null;
+                },
+                allFiltersActive() {
+                    return this.dateFilter === 'all'
+                        && this.marketGroupFilter === 'all'
+                        && this.oddsMarketFilter === 'all'
+                        && !this.onlyAvailableOdds
+                        && !this.countryFilter;
                 },
                 selectCompetitionTab(tab) {
                     this.openFeedMenu = null;

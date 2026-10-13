@@ -1,6 +1,8 @@
--- Run once on the production MySQL/MariaDB database before deploying the
--- application code. Do not run this file if the Laravel migration has already
--- been applied.
+-- Legacy schema-only script. For a new install, use
+-- 20261015_match_sections_and_public_sports_catalog.sql instead.
+-- If this older script was already applied, the consolidated script can still
+-- be run: it checks for the country column and section table before adding them.
+-- Do not run this legacy script after the consolidated script.
 
 ALTER TABLE game_matches
     ADD COLUMN country VARCHAR(100) NULL;

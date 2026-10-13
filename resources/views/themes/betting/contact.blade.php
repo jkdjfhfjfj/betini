@@ -9,10 +9,10 @@
                 <div class="col-lg-6">
                     <div class="text-box">
                         <div class="header-text">
-                            <h5>@lang(@$contact->heading)</h5>
-                            <h3>@lang(@$contact->sub_heading)</h3>
+                            <h5>@lang(data_get($contact, 'heading'))</h5>
+                            <h3>@lang(data_get($contact, 'sub_heading'))</h3>
                             <p>
-                                @lang(@$contact->short_description)
+                                @lang(data_get($contact, 'short_description'))
                             </p>
                         </div>
                         <div class="row">
@@ -22,7 +22,7 @@
                                 </div>
                                 <div class="text">
                                     <h5>@lang('Address')</h5>
-                                    <p>@lang($contact->address)</p>
+                                    <p>@lang(data_get($contact, 'address'))</p>
                                 </div>
                             </div>
                             <div class="info-box col-md-6">
@@ -31,7 +31,7 @@
                                 </div>
                                 <div class="text">
                                     <h5>@lang('House')</h5>
-                                    <p>@lang($contact->house)</p>
+                                    <p>@lang(data_get($contact, 'house'))</p>
                                 </div>
                             </div>
                             <div class="info-box col-md-6">
@@ -40,7 +40,7 @@
                                 </div>
                                 <div class="text">
                                     <h5>@lang('Email')</h5>
-                                    <p>@lang($contact->email)</p>
+                                    <p>@lang(data_get($contact, 'email'))</p>
                                 </div>
                             </div>
                             <div class="info-box col-md-6">
@@ -49,7 +49,7 @@
                                 </div>
                                 <div class="text">
                                     <h5>@lang('Phone')</h5>
-                                    <p>@lang($contact->phone)</p>
+                                    <p>@lang(data_get($contact, 'phone'))</p>
                                 </div>
                             </div>
                         </div>

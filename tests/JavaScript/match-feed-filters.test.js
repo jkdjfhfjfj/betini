@@ -32,6 +32,27 @@ test('today filter includes only matches scheduled on the browser local date', (
     );
 });
 
+test('All filter values remove date, market-group, and odds restrictions', () => {
+    const fixtures = [
+        match(1, localDate(2026, 10, 13), [{ option_name: 'Home', ratio: 2.1 }]),
+        match(2, localDate(2026, 10, 12), []),
+        match(3, localDate(2026, 10, 14), [{ option_name: 'Away', ratio: 3.2 }])
+    ];
+
+    assert.deepEqual(
+        filterMatches(fixtures, {
+            dateFilter: 'all',
+            marketGroupFilter: 'all',
+            onlyAvailableOdds: false
+        }, new Date(2026, 9, 13, 12)).map(item => item.id),
+        [1, 2, 3]
+    );
+    assert.deepEqual(
+        selectQuestions(fixtures[0].questions, 'all'),
+        fixtures[0].questions
+    );
+});
+
 test('highlights excludes fixtures without markets while all matches retains them', () => {
     const fixtures = [
         match(1, localDate(2026, 10, 13), [{ option_name: 'Home', ratio: 2.1 }]),

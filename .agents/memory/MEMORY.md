@@ -6,3 +6,4 @@
 - [FTP asset parity](ftp-asset-parity.md) — when the live Blade markup looks current but the page styling differs, compare the deployed CSS with the workspace file before changing UI rules.
 - [Betting header alignment](betting-header-alignment.md) — keep theme, currency, account, and sign-in actions at the far right across phone, tablet, and desktop.
 - [Admin-managed match sections](admin-managed-match-sections.md) — special match tabs must use admin-assigned country and section labels.
+- [Makamesco B2C contract](makamesco-b2c.md) — use its documented API-key header and routes; diagnose 403 responses through provider permissions, not guessed auth changes.
