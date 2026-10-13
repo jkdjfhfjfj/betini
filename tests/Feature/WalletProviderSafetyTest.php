@@ -545,6 +545,43 @@ class WalletProviderSafetyTest extends TestCase
         $this->assertSame(1, Transaction::where('trx_id', $entry->reference)->count());
     }
 
+    public function test_currencylayer_refresh_saves_usd_source_quotes_for_native_wallets()
+    {
+        $currencies = array_diff(array_keys(config('currencies.supported', [])), ['USD']);
+        $quotes = [];
+        foreach ($currencies as $index => $currency) {
+            $quotes['USD' . $currency] = 100 + $index;
+        }
+
+        $this->saveProviderSettings('currencylayer', ['access_key' => 'test-currencylayer-access-key']);
+        Http::fake([
+            'https://api.currencylayer.com/live*' => Http::response([
+                'success' => true,
+                'timestamp' => now()->timestamp,
+                'source' => 'USD',
+                'quotes' => $quotes,
+            ], 200),
+        ]);
+
+        $exitCode = \Illuminate\Support\Facades\Artisan::call('wallet:rates:update');
+
+        $this->assertSame(0, $exitCode);
+        $this->assertEquals($quotes['USDKES'], (float)DB::table('currency_rates')
+            ->where('currency_code', 'KES')
+            ->value('usd_to_currency'));
+        $this->assertSame('currencylayer', DB::table('currency_rates')
+            ->where('currency_code', 'KES')
+            ->value('source'));
+        Http::assertSent(function ($request) {
+            $query = [];
+            parse_str((string)parse_url($request->url(), PHP_URL_QUERY), $query);
+
+            return str_contains($request->url(), 'api.currencylayer.com/live')
+                && ($query['access_key'] ?? null) === 'test-currencylayer-access-key'
+                && ($query['source'] ?? null) === 'USD';
+        });
+    }
+
     public function test_rejected_manual_withdrawal_refunds_reserved_balance_only_once()
     {
         $user = $this->createUser(80, 'KES');
