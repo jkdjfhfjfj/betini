@@ -99,16 +99,18 @@
                 }
                 -->
                 <!-- ============================================================== -->
+                @php($adminUser = Auth::guard('admin')->user())
+                @if($adminUser)
                 <li class="nav-item dropdown">
 
 
                     <a class="nav-link dropdown-toggle" href="javascript:void(0)" data-toggle="dropdown"
                        aria-haspopup="true" aria-expanded="false">
-                        <img src="{{getFile(config('location.admin.path').Auth::guard('admin')->user()->image)}}"
+                        <img src="{{getFile(config('location.admin.path').$adminUser->image)}}"
                              alt="user"
                              class="rounded-circle width-40p">
                         <span class="ml-2 d-none d-lg-inline-block"><span class="text-dark">@lang('Hello,')</span> <span
-                                class="text-dark">{{ Auth::guard('admin')->user()->username }}</span> <i
+                                class="text-dark">{{ $adminUser->username }}</span> <i
                                 data-feather="chevron-down"
                                 class="svg-icon"></i></span>
                     </a>
@@ -139,6 +141,7 @@
 
                     </div>
                 </li>
+                @endif
 
 
             </ul>

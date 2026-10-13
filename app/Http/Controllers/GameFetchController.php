@@ -61,7 +61,7 @@ class GameFetchController extends Controller
                     "category_id" => $query->category_id,
                     "tournament_id" => $query->tournament_id,
                     "team1_id" => $query->team1_id,
-                    "team2_id" => $query->team1_id,
+                    "team2_id" => $query->team2_id,
                     "name" => $query->name,
                     "name_slug" => slug($query->name),
                     "slug" => slug(optional($query->gameTeam1)->name . ' vs ' . optional($query->gameTeam2)->name),

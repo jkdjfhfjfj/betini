@@ -99,16 +99,18 @@
                 }
                 -->
                 <!-- ============================================================== -->
+                <?php ($adminUser = Auth::guard('admin')->user()); ?>
+                <?php if($adminUser): ?>
                 <li class="nav-item dropdown">
 
 
                     <a class="nav-link dropdown-toggle" href="javascript:void(0)" data-toggle="dropdown"
                        aria-haspopup="true" aria-expanded="false">
-                        <img src="<?php echo e(getFile(config('location.admin.path').Auth::guard('admin')->user()->image)); ?>"
+                        <img src="<?php echo e(getFile(config('location.admin.path').$adminUser->image)); ?>"
                              alt="user"
                              class="rounded-circle width-40p">
                         <span class="ml-2 d-none d-lg-inline-block"><span class="text-dark"><?php echo app('translator')->get('Hello,'); ?></span> <span
-                                class="text-dark"><?php echo e(Auth::guard('admin')->user()->username); ?></span> <i
+                                class="text-dark"><?php echo e($adminUser->username); ?></span> <i
                                 data-feather="chevron-down"
                                 class="svg-icon"></i></span>
                     </a>
@@ -140,6 +142,7 @@
 
                     </div>
                 </li>
+                <?php endif; ?>
 
 
             </ul>
