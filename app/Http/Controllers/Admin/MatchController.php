@@ -14,6 +14,7 @@ use App\Models\GameTeam;
 use App\Models\GameTournament;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Stevebauman\Purify\Facades\Purify;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class MatchController extends Controller
 
     public function listMatch(Request $request)
     {
-        $data['matches'] = GameMatch::with(['gameCategory', 'gameTournament', 'gameTeam1', 'gameTeam2'])->withCount('activeQuestions')->orderBy('id', 'desc')->paginate(config('basic.paginate'));
+        $data['matches'] = GameMatch::with(['gameCategory', 'gameTournament', 'gameTeam1', 'gameTeam2', 'sectionAssignments'])->withCount('activeQuestions')->orderBy('id', 'desc')->paginate(config('basic.paginate'));
         $data['tournaments'] = GameTournament::with('gameCategory')->whereStatus(1)->orderBy('name', 'asc')->get();
         $data['categories'] = GameCategory::whereStatus(1)->orderBy('name', 'asc')->get();
         return view('admin.match.list', $data);
@@ -36,7 +37,7 @@ class MatchController extends Controller
         $search = $request->all();
         $dateSearch = $request->date_time;
         $date = preg_match("/^[0-9]{2,4}\-[0-9]{1,2}\-[0-9]{1,2}$/", $dateSearch);
-        $matches = GameMatch::with(['gameCategory', 'gameTournament', 'gameTeam1', 'gameTeam2'])
+        $matches = GameMatch::with(['gameCategory', 'gameTournament', 'gameTeam1', 'gameTeam2', 'sectionAssignments'])
             ->when(isset($search['search']), function ($query) use ($search) {
                 $query->whereHas('gameTeam1', function ($qq) use ($search) {
                     $qq->where('name', 'like', "%" . $search['search'] . "%");
@@ -86,7 +87,9 @@ class MatchController extends Controller
     public function storeMatch(Request $request)
     {
 
-        $purifiedData = Purify::clean($request->except('_token', '_method'));
+        $selectedSections = $request->input('sections', []);
+        $purifiedData = Purify::clean($request->except('_token', '_method', 'sections'));
+        $validationData = array_merge($purifiedData, ['sections' => $selectedSections]);
 
         $rules = [
             'category' => 'required',
@@ -95,6 +98,9 @@ class MatchController extends Controller
             'team2' => 'required',
             'start_date' => 'required',
             'end_date' => 'required',
+            'country' => 'nullable|string|max:100',
+            'sections' => 'nullable|array',
+            'sections.*' => 'in:zoom-soccer,jackpots,new,turbo',
         ];
         $message = [
             'category.required' => 'Category field is required',
@@ -105,11 +111,12 @@ class MatchController extends Controller
             'end_date.required' => 'End date field is required',
         ];
 
-        $validate = Validator::make($purifiedData, $rules, $message);
+        $validate = Validator::make($validationData, $rules, $message);
 
         if ($validate->fails()) {
             return back()->withInput()->withErrors($validate);
         }
+        $selectedSections = $validate->validated()['sections'] ?? [];
 
         try {
             $gameMatch = new GameMatch();
@@ -134,9 +141,16 @@ class MatchController extends Controller
             if ($request->has('name')) {
                 $gameMatch->name = @$purifiedData['name'];
             }
+            $gameMatch->country = trim($purifiedData['country'] ?? '') ?: null;
 
             $gameMatch->status = isset($purifiedData['status']) == 'true' ? 1 : 0;
-            $gameMatch->save();
+            DB::transaction(function () use ($gameMatch, $selectedSections) {
+                $gameMatch->save();
+                $gameMatch->sectionAssignments()->delete();
+                $gameMatch->sectionAssignments()->createMany(array_map(function ($section) {
+                    return ['section' => $section];
+                }, $selectedSections));
+            });
 
 
             $query = $gameMatch;
@@ -149,13 +163,16 @@ class MatchController extends Controller
             return back()->with('success', 'Successfully Saved');
 
         } catch (\Exception $e) {
-            return back();
+            report($e);
+            return back()->withInput()->with('error', 'Unable to save this match. Confirm the match-feed database migration has been applied.');
         }
     }
 
     public function updateMatch(Request $request, $id)
     {
-        $purifiedData = Purify::clean($request->except('_token', '_method'));
+        $selectedSections = $request->input('sections', []);
+        $purifiedData = Purify::clean($request->except('_token', '_method', 'sections'));
+        $validationData = array_merge($purifiedData, ['sections' => $selectedSections]);
         $rules = [
             'category' => 'required',
             'tournament' => 'required',
@@ -163,6 +180,9 @@ class MatchController extends Controller
             'team2' => 'required',
             'start_date' => 'required',
             'end_date' => 'required',
+            'country' => 'nullable|string|max:100',
+            'sections' => 'nullable|array',
+            'sections.*' => 'in:zoom-soccer,jackpots,new,turbo',
         ];
         $message = [
             'category.required' => 'Category field is required',
@@ -173,11 +193,12 @@ class MatchController extends Controller
             'end_date.required' => 'End date field is required',
         ];
 
-        $validate = Validator::make($purifiedData, $rules, $message);
+        $validate = Validator::make($validationData, $rules, $message);
 
         if ($validate->fails()) {
             return back()->withInput()->withErrors($validate);
         }
+        $selectedSections = $validate->validated()['sections'] ?? [];
 
         try {
             $gameMatch = GameMatch::findOrFail($id);
@@ -203,9 +224,16 @@ class MatchController extends Controller
             if ($request->has('name')) {
                 $gameMatch->name = @$purifiedData['name'];
             }
+            $gameMatch->country = trim($purifiedData['country'] ?? '') ?: null;
 
             $gameMatch->status = isset($purifiedData['status']) == 'true' ? 1 : 0;
-            $gameMatch->save();
+            DB::transaction(function () use ($gameMatch, $selectedSections) {
+                $gameMatch->save();
+                $gameMatch->sectionAssignments()->delete();
+                $gameMatch->sectionAssignments()->createMany(array_map(function ($section) {
+                    return ['section' => $section];
+                }, $selectedSections));
+            });
 
 
             $query = $gameMatch;
@@ -220,7 +248,8 @@ class MatchController extends Controller
             return back()->with('success', 'Successfully Updated');
 
         } catch (\Exception $e) {
-            return back();
+            report($e);
+            return back()->withInput()->with('error', 'Unable to save this match. Confirm the match-feed database migration has been applied.');
         }
     }
 

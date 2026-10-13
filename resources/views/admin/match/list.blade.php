@@ -105,6 +105,7 @@
                         <th scope="col">@lang('Active Question')</th>
                         <th scope="col">@lang('Tournament')</th>
                         <th scope="col">@lang('Category')</th>
+                        <th scope="col">@lang('Country / Sections')</th>
                         <th scope="col">@lang('Start Date')</th>
                         <th scope="col" class="text-center">@lang('Status')</th>
 
@@ -159,6 +160,10 @@
                             <td data-label="@lang('Category')" class="text-dark">
                                 {!! optional($item->gameCategory)->icon !!}
                                 {{ optional($item->gameCategory)->name }}
+                            </td>
+                            <td data-label="@lang('Country / Sections')" class="text-dark">
+                                <div>{{ $item->country ?: '—' }}</div>
+                                <small>{{ $item->sectionAssignments->pluck('section')->map(function ($section) { return ucwords(str_replace('-', ' ', $section)); })->implode(', ') ?: '—' }}</small>
                             </td>
                             <td data-label="@lang('Start Date')">
                                 {{ dateTime($item->start_date, 'd M, Y') }}
@@ -397,6 +402,28 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="text-dark" for="newMatchCountry">@lang('Country')</label>
+                                    <input type="text" class="form-control" id="newMatchCountry" name="country"
+                                           maxlength="100" placeholder="@lang('e.g. Kenya')">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <fieldset class="form-group">
+                                    <legend class="text-dark h6">@lang('Match sections')</legend>
+                                    <div class="d-flex flex-wrap">
+                                        @foreach (['zoom-soccer' => 'Zoom Soccer', 'jackpots' => 'Jackpots', 'new' => 'New', 'turbo' => 'Turbo'] as $sectionValue => $sectionLabel)
+                                            <label class="mr-3 mb-2">
+                                                <input type="checkbox" name="sections[]" value="{{ $sectionValue }}">
+                                                {{ __($sectionLabel) }}
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
                         <div class="form-group ">
                             <label for="status" class="text-dark"> @lang('Status') </label>
                             <input data-toggle="toggle" id="status" data-onstyle="success" data-offstyle="info"
@@ -525,6 +552,28 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="text-dark" for="editMatchCountry">@lang('Country')</label>
+                                    <input type="text" class="form-control" id="editMatchCountry" name="country"
+                                           maxlength="100" placeholder="@lang('e.g. Kenya')">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <fieldset class="form-group">
+                                    <legend class="text-dark h6">@lang('Match sections')</legend>
+                                    <div class="d-flex flex-wrap">
+                                        @foreach (['zoom-soccer' => 'Zoom Soccer', 'jackpots' => 'Jackpots', 'new' => 'New', 'turbo' => 'Turbo'] as $sectionValue => $sectionLabel)
+                                            <label class="mr-3 mb-2">
+                                                <input type="checkbox" name="sections[]" value="{{ $sectionValue }}">
+                                                {{ __($sectionLabel) }}
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
                         <div class="form-group ">
                             <label for="status" class="text-dark"> @lang('Status') </label>
                             <input data-toggle="toggle" id="edit-status" data-onstyle="success" data-offstyle="info"
@@ -627,6 +676,11 @@
             $('.id-get').text(match.id)
 
             modal.find('input[name=name]').val(match.name);
+            modal.find('input[name=country]').val(match.country || '');
+            modal.find('input[name="sections[]"]').prop('checked', false);
+            $.each(match.section_assignments || [], function (key, assignment) {
+                modal.find('input[name="sections[]"][value="' + assignment.section + '"]').prop('checked', true);
+            });
 
 
             match_team1_id = match.team1_id

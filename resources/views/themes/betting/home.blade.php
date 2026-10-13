@@ -48,18 +48,35 @@
                 <nav class="match-competition-tabs" role="tablist" aria-label="@lang('Match sections')">
                     <button type="button" role="tab"
                             @click="selectCompetitionTab('highlights')"
-                            :class="{active: showType == 'live'}"
-                            :aria-selected="showType == 'live'">@lang('Highlights')</button>
+                            :class="{active: activeSection == 'highlights'}"
+                            :aria-selected="activeSection == 'highlights'">@lang('Highlights')</button>
                     <button type="button" role="tab"
                             @click="selectCompetitionTab('upcoming')"
-                            :class="{active: showType == 'upcoming'}"
-                            :aria-selected="showType == 'upcoming'">@lang('Upcoming')</button>
-                    <button type="button" role="tab" class="is-unavailable" disabled title="@lang('This section is not connected to the current match feed.')">@lang('Countries')</button>
-                    <button type="button" role="tab" class="is-unavailable" disabled title="@lang('This section is not connected to the current match feed.')">@lang('Zoom Soccer')</button>
-                    <button type="button" role="tab" class="is-unavailable" disabled title="@lang('This section is not connected to the current match feed.')">@lang('Jackpots')</button>
-                    <button type="button" role="tab" class="is-unavailable" disabled title="@lang('This section is not connected to the current match feed.')">@lang('New')</button>
-                    <button type="button" role="tab" class="is-unavailable" disabled title="@lang('This section is not connected to the current match feed.')">@lang('Turbo')</button>
+                            :class="{active: activeSection == 'upcoming'}"
+                            :aria-selected="activeSection == 'upcoming'">@lang('Upcoming')</button>
+                    <button type="button" role="tab" @click="selectCompetitionTab('countries')"
+                            :class="{active: activeSection == 'countries'}"
+                            :aria-selected="activeSection == 'countries'">@lang('Countries')</button>
+                    <button type="button" role="tab" @click="selectCompetitionTab('zoom-soccer')"
+                            :class="{active: activeSection == 'zoom-soccer'}"
+                            :aria-selected="activeSection == 'zoom-soccer'">@lang('Zoom Soccer')</button>
+                    <button type="button" role="tab" @click="selectCompetitionTab('jackpots')"
+                            :class="{active: activeSection == 'jackpots'}"
+                            :aria-selected="activeSection == 'jackpots'">@lang('Jackpots')</button>
+                    <button type="button" role="tab" @click="selectCompetitionTab('new')"
+                            :class="{active: activeSection == 'new'}"
+                            :aria-selected="activeSection == 'new'">@lang('New')</button>
+                    <button type="button" role="tab" @click="selectCompetitionTab('turbo')"
+                            :class="{active: activeSection == 'turbo'}"
+                            :aria-selected="activeSection == 'turbo'">@lang('Turbo')</button>
                 </nav>
+
+                <div class="match-country-filter" v-if="activeSection == 'countries'" role="group" aria-label="@lang('Choose a country')">
+                    <button type="button" :class="{active: !countryFilter}" @click="setCountryFilter('')">@lang('All countries')</button>
+                    <button type="button" v-for="country in countryOptions()" :key="country"
+                            :class="{active: countryFilter == country}" @click="setCountryFilter(country)">@{{ country }}</button>
+                    <span v-if="countryOptions().length == 0">@lang('No countries configured for matches')</span>
+                </div>
 
                 <div class="match-filter-toolbar" role="group" aria-label="@lang('Match filters')">
                     <div class="match-filter-menu">
@@ -137,6 +154,14 @@
                     <div><span>1</span><span>X</span><span>2</span></div>
                 </div>
                 @include($theme.'partials.home.content')
+                <div class="match-feed-empty-desktop d-none d-sm-block"
+                     v-if="showType == 'live' && visibleMatches(allSports_filter).length == 0">
+                    @lang('No matches match these filters')
+                </div>
+                <div class="match-feed-empty-desktop d-none d-sm-block"
+                     v-if="showType == 'upcoming' && visibleMatches(upcoming_filter).length == 0">
+                    @lang('No matches match these filters')
+                </div>
             @endif
 
         </div>
@@ -179,6 +204,7 @@
                 minimum_bet: "{{ $minimumBetForCurrency }}",
                 allSports_filter: [],
                 upcoming_filter: [],
+                allMatches_filter: [],
 
                 selectedData: {},
                 betSlip: [],
@@ -190,6 +216,8 @@
                     amount: ''
                 },
                 showType: 'live',
+                activeSection: 'highlights',
+                countryFilter: '',
                 openFeedMenu: null,
                 dateFilter: 'today',
                 marketGroupFilter: 'highlights',
@@ -201,7 +229,8 @@
                 if (showType == null) {
                     localStorage.setItem("showType", 'live');
                 }
-                this.showType = localStorage.getItem("showType")
+                this.showType = localStorage.getItem("showType") || 'live'
+                this.activeSection = this.showType == 'upcoming' ? 'upcoming' : 'highlights';
 
                 this.getMatches();
                 this.getSlip();
@@ -245,6 +274,9 @@
                         .then(function (response) {
                             _this.allSports_filter = response.data.liveList;
                             _this.upcoming_filter = response.data.upcomingList;
+                            _this.allMatches_filter = Array.isArray(response.data.allList)
+                                ? response.data.allList
+                                : response.data.liveList.concat(response.data.upcomingList);
                         })
                         .catch(function (error) {
                             console.log(error);
@@ -362,6 +394,9 @@
                         return obj
                     });
                     _this.allSports_filter = result
+                    _this.allMatches_filter = _this.allMatches_filter.map(function (obj) {
+                        return obj.id == data.match.id ? data.match : obj;
+                    });
 
 
                     var list2 = _this.upcoming_filter;
@@ -385,6 +420,11 @@
                     if (data && data.type == 'UpcomingList') {
                         var upcomingList = _this.upcoming_filter;
                         upcomingList.push(data.match);
+                    }
+                    if (data && data.match && !_this.allMatches_filter.some(function (match) {
+                        return match.id == data.match.id;
+                    })) {
+                        _this.allMatches_filter.push(data.match);
                     }
                 },
                 betPlace() {
@@ -463,11 +503,29 @@
                     });
                 },
                 visibleMatches(items) {
-                    return MatchFeedFilters.filterMatches(items, {
+                    var section = ['countries', 'zoom-soccer', 'jackpots', 'new', 'turbo'].indexOf(this.activeSection) !== -1
+                        ? this.activeSection
+                        : null;
+                    var matches = section ? this.allMatches_filter : items;
+
+                    return MatchFeedFilters.filterMatches(matches, {
                         dateFilter: this.dateFilter,
                         marketGroupFilter: this.marketGroupFilter,
-                        onlyAvailableOdds: this.onlyAvailableOdds
+                        onlyAvailableOdds: this.onlyAvailableOdds,
+                        section: section,
+                        country: section == 'countries' ? this.countryFilter : ''
                     });
+                },
+                countryOptions() {
+                    var countries = this.allMatches_filter
+                        .map(function (match) { return String(match.country || '').trim(); })
+                        .filter(function (country) { return country.length > 0; });
+                    return Array.from(new Set(countries)).sort(function (a, b) {
+                        return a.localeCompare(b);
+                    });
+                },
+                setCountryFilter(country) {
+                    this.countryFilter = country;
                 },
                 visibleQuestions(items) {
                     return MatchFeedFilters.selectQuestions(items, this.oddsMarketFilter);
@@ -498,11 +556,22 @@
                     this.openFeedMenu = null;
                 },
                 selectCompetitionTab(tab) {
-                    this.liveUpComing(tab == 'upcoming' ? 'upcoming' : 'live');
+                    this.openFeedMenu = null;
+                    this.countryFilter = '';
+                    if (tab == 'highlights' || tab == 'upcoming') {
+                        this.activeSection = tab;
+                        this.liveUpComing(tab == 'upcoming' ? 'upcoming' : 'live');
+                        return;
+                    }
+
+                    this.activeSection = tab;
+                    this.showType = 'live';
+                    localStorage.setItem('showType', 'live');
                 },
                 liveUpComing(type){
                     localStorage.setItem("showType", type);
                     this.showType = type;
+                    this.activeSection = type == 'upcoming' ? 'upcoming' : 'highlights';
                     this.openFeedMenu = null;
                 }
 

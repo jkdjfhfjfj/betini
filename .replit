@@ -29,7 +29,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "DATABASE_URL='' DB_CONNECTION=sqlite DB_DATABASE=/tmp/wallet-preview.sqlite APP_CONFIG_CACHE=/tmp/wallet-preview-config.php APP_URL=\"https://${REPLIT_DEV_DOMAIN:-localhost}\" ASSET_URL=\"https://${REPLIT_DEV_DOMAIN:-localhost}\" APP_ENV=local APP_DEBUG=false CACHE_DRIVER=file SESSION_DRIVER=file bash -c 'rm -f \"$APP_CONFIG_CACHE\"; touch \"$DB_DATABASE\"; exec php -S 0.0.0.0:${PORT:-5000} server.php'"
+args = "DATABASE_URL='' DB_CONNECTION=sqlite DB_DATABASE=/tmp/wallet-preview.sqlite APP_CONFIG_CACHE=/tmp/wallet-preview-config.php APP_URL=\"https://${REPLIT_DEV_DOMAIN:-localhost}\" ASSET_URL=\"https://${REPLIT_DEV_DOMAIN:-localhost}\" VIEW_COMPILED_PATH=/tmp/wallet-preview-views APP_ENV=local APP_DEBUG=false CACHE_DRIVER=file SESSION_DRIVER=file bash -c 'rm -f \"$APP_CONFIG_CACHE\"; mkdir -p \"$VIEW_COMPILED_PATH\"; touch \"$DB_DATABASE\"; exec php -S 0.0.0.0:${PORT:-5000} server.php'"
 waitForPort = 5000
 
 [agent]

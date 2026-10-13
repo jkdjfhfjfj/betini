@@ -50,7 +50,8 @@ class GameFetchController extends Controller
                     $q->select('id', 'name', 'icon');
                 },
                 'activeQuestions',
-                'activeQuestions.activeGameOptions'
+                'activeQuestions.activeGameOptions',
+                'sectionAssignments'
             ])->get()
             ->map(function ($query) {
 
@@ -63,6 +64,8 @@ class GameFetchController extends Controller
                     "team1_id" => $query->team1_id,
                     "team2_id" => $query->team2_id,
                     "name" => $query->name,
+                    "country" => $query->country,
+                    "sections" => $query->sectionAssignments->pluck('section')->sort()->values(),
                     "name_slug" => slug($query->name),
                     "slug" => slug(optional($query->gameTeam1)->name . ' vs ' . optional($query->gameTeam2)->name),
                     'status' => $query->status,
@@ -115,13 +118,15 @@ class GameFetchController extends Controller
                 ];
             });
 
-        $list =  $matches->where('start_date', '<=', $now)->where('end_date', '>', $now);
-        $upcoming = $matches->where('start_date', '>', $now)->where('end_date', '>', $now)->values();
+        $all = $matches->where('end_date', '>', $now)->values();
+        $list = $all->where('start_date', '<=', $now)->values();
+        $upcoming = $all->where('start_date', '>', $now)->values();
 
 
         return response([
             'liveList' => $list,
             'upcomingList' => $upcoming,
+            'allList' => $all,
         ], 200);
     }
 }

@@ -33,6 +33,9 @@ class GameMatch extends Model
         return $this->hasMany(GameQuestions::class,'match_id')->where('status',1);
     }
 
-
+    public function sectionAssignments()
+    {
+        return $this->hasMany(GameMatchSection::class, 'match_id');
+    }
 
 }

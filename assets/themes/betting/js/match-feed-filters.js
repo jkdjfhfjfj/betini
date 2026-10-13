@@ -42,6 +42,18 @@
         var today = dateKey(now || new Date());
 
         return matches.filter(function (match) {
+            if (settings.section === 'countries' && !String(match.country || '').trim()) {
+                return false;
+            }
+            if (settings.country && String(match.country || '').toLowerCase() !== String(settings.country).toLowerCase()) {
+                return false;
+            }
+            if (settings.section && settings.section !== 'countries') {
+                var sections = Array.isArray(match.sections) ? match.sections : [];
+                if (sections.indexOf(settings.section) === -1) {
+                    return false;
+                }
+            }
             if (settings.dateFilter === 'today' && dateKey(match.start_date) !== today) {
                 return false;
             }

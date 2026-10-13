@@ -86,3 +86,42 @@ test('1x2 falls back to the first available market when no result market is name
     assert.deepEqual(selectQuestions(questions, '1x2'), [questions[0]]);
     assert.deepEqual(selectQuestions([], '1x2'), []);
 });
+
+test('countries section includes only country-assigned matches and honors country selection', () => {
+    const fixtures = [
+        { id: 1, country: 'Kenya', sections: [] },
+        { id: 2, country: 'Uganda', sections: [] },
+        { id: 3, country: null, sections: [] }
+    ];
+
+    assert.deepEqual(
+        filterMatches(fixtures, { section: 'countries', dateFilter: 'all', marketGroupFilter: 'all' }).map(item => item.id),
+        [1, 2]
+    );
+    assert.deepEqual(
+        filterMatches(fixtures, {
+            section: 'countries',
+            country: 'Uganda',
+            dateFilter: 'all',
+            marketGroupFilter: 'all'
+        }).map(item => item.id),
+        [2]
+    );
+});
+
+test('admin-assigned sections only return matches tagged for the selected section', () => {
+    const fixtures = [
+        { id: 1, sections: ['zoom-soccer', 'new'] },
+        { id: 2, sections: ['jackpots'] },
+        { id: 3, sections: ['turbo'] },
+        { id: 4, sections: [] }
+    ];
+
+    for (const section of ['zoom-soccer', 'jackpots', 'new', 'turbo']) {
+        assert.equal(
+            filterMatches(fixtures, { section, dateFilter: 'all', marketGroupFilter: 'all' }).length,
+            1,
+            `${section} only returns its assigned fixture`
+        );
+    }
+});

@@ -5,3 +5,4 @@
 - [PayzaAPI contract](payzaapi-contract.md) — use hosted checkout and signed payment events; reconcile payouts via documented status polling unless Payza confirms another contract.
 - [FTP asset parity](ftp-asset-parity.md) — when the live Blade markup looks current but the page styling differs, compare the deployed CSS with the workspace file before changing UI rules.
 - [Betting header alignment](betting-header-alignment.md) — keep theme, currency, account, and sign-in actions at the far right across phone, tablet, and desktop.
+- [Admin-managed match sections](admin-managed-match-sections.md) — special match tabs must use admin-assigned country and section labels.
