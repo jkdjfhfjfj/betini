@@ -229,10 +229,18 @@
                     </li>
 
                     <li class="sidebar-item">
+                        <a class="sidebar-link" href="{{ route('admin.ticket',['pending']) }}"
+                           aria-expanded="false">
+                            <i class="fas fa-hourglass-half text-warning"></i>
+                            <span class="hide-menu">@lang('Pending Tickets')</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-item">
                         <a class="sidebar-link" href="{{ route('admin.ticket',['open']) }}"
                            aria-expanded="false">
                             <i class="fas fa-spinner text-success"></i>
-                            <span class="hide-menu">@lang('Open Ticket')</span>
+                            <span class="hide-menu">@lang('New / Open Tickets')</span>
                         </a>
                     </li>
 

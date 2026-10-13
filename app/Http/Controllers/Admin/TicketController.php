@@ -31,12 +31,18 @@ class TicketController extends Controller
     {
 
         $search = $request->all();
-        $dateSearch = $request->date_time;
-        $date = preg_match("/^[0-9]{2,4}\-[0-9]{1,2}\-[0-9]{1,2}$/", $dateSearch);
+        $dateSearch = $request->input('date_time', '');
+        $date = is_string($dateSearch)
+            && preg_match("/^[0-9]{2,4}\-[0-9]{1,2}\-[0-9]{1,2}$/", $dateSearch) === 1;
 
         $title = 'Tickets List';
+        $pendingOnly = false;
 
-        if (isset($type) && BasicService::validateKeyword($type, 'open') == 1) {
+        if (isset($type) && BasicService::validateKeyword($type, 'pending') == 1) {
+            $title = 'Pending Tickets';
+            $pendingOnly = true;
+            $type = null;
+        } elseif (isset($type) && BasicService::validateKeyword($type, 'open') == 1) {
             $title = 'Open Tickets';
             $type = 0;
         } elseif (isset($type) && BasicService::validateKeyword($type, 'answered') == 1) {
@@ -50,18 +56,21 @@ class TicketController extends Controller
             $type = 3;
         }
 
-        $tickets = Ticket::when(isset($search['ticket']), function ($query) use ($search) {
+        $tickets = Ticket::when($request->filled('ticket'), function ($query) use ($search) {
             return $query->where('ticket', 'LIKE', "%{$search['ticket']}%");
         })
-            ->when(isset($search['email']), function ($query) use ($search) {
+            ->when($request->filled('email'), function ($query) use ($search) {
                 return $query->where('email', 'LIKE', "%{$search['email']}%");
             })
-            ->when(isset($search['status']), function ($query) use ($search) {
+            ->when($request->filled('status'), function ($query) use ($search) {
                 return $query->where('status', $search['status']);
             })
             ->when($date == 1, function ($query) use ($dateSearch) {
                 return $query->whereDate("created_at", $dateSearch);
             })->with('user')
+            ->when($pendingOnly, function ($query) {
+                return $query->whereIn('status', [0, 2]);
+            })
             ->when(isset($type), function ($query) use ($type) {
                 return $query->where('status', $type);
             })

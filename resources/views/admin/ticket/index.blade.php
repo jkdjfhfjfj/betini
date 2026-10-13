@@ -23,7 +23,7 @@
                         <select name="status" class="form-control">
                             <option value="">@lang('All Ticket')</option>
                             <option value="0"
-                                    @if(@request()->status == '0') selected @endif>@lang('Open Ticket')</option>
+                                    @if(@request()->status == '0') selected @endif>@lang('Pending / Open Ticket')</option>
                             <option value="1"
                                     @if(@request()->status == '1') selected @endif>@lang('Answered Ticket')</option>
                             <option value="2"
@@ -88,12 +88,12 @@
                             </td>
                             <td data-label="@lang('Status')">
                                 @if($ticket->status == 0)
-                                    <span class="badge badge-pill badge-success">@lang('Open')</span>
+                                    <span class="badge badge-pill badge-success">@lang('Pending / Open')</span>
                                 @elseif($ticket->status == 1)
                                     <span class="badge badge-pill badge-primary">@lang('Answered')</span>
                                 @elseif($ticket->status == 2)
                                     <span
-                                        class="badge badge-pill badge-warning">@lang('Customer Reply')</span>
+                                        class="badge badge-pill badge-warning">@lang('Customer Reply — Pending')</span>
                                 @elseif($ticket->status == 3)
                                     <span class="badge badge-pill badge-dark">@lang('Closed')</span>
                                 @endif

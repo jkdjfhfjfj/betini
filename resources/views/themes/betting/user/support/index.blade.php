@@ -34,7 +34,7 @@
                                     <td data-label="@lang('Status')">
                                         @if($ticket->status == 0)
                                             <span
-                                                class="badge bg-success">@lang('Open')</span>
+                                                class="badge bg-success">@lang('Pending / Open')</span>
                                         @elseif($ticket->status == 1)
                                             <span
                                                 class="badge bg-primary">@lang('Answered')</span>
