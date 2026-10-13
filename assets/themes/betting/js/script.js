@@ -23,16 +23,31 @@ const previewImage = (id) => {
 };
 
 // toggle sidebar
+const setSidebarExpanded = (id, expanded) => {
+    document.querySelectorAll(`[aria-controls="${id}"]`).forEach((trigger) => {
+        trigger.setAttribute("aria-expanded", String(expanded));
+    });
+};
+
 window.toggleSidebar = (id) => {
     const element = document.getElementById(id);
     if (!element) return false;
-    element.classList.toggle("active");
+    const expanded = element.classList.toggle("active");
+    setSidebarExpanded(id, expanded);
+    return expanded;
+};
+window.openSidebar = (id) => {
+    const element = document.getElementById(id);
+    if (!element) return false;
+    element.classList.add("active");
+    setSidebarExpanded(id, true);
     return true;
 };
 window.removeClass = (id) => {
     const element = document.getElementById(id);
     if (!element) return false;
     element.classList.remove("active");
+    setSidebarExpanded(id, false);
     return true;
 };
 
@@ -63,6 +78,8 @@ document.addEventListener("keydown", (event) => {
     const button = document.querySelector("#sportsCategoryBar .category-more");
     if (menu) menu.hidden = true;
     if (button) button.setAttribute("aria-expanded", "false");
+    const rightbar = document.getElementById("rightbar");
+    if (rightbar && rightbar.classList.contains("active")) window.removeClass("rightbar");
 });
 
 // // dark mode

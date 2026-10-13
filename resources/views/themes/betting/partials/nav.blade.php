@@ -67,17 +67,15 @@
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item {{menuActive('user.addFund')}}" href="{{route('user.addFund')}}">
-                                <i class="fal fa-money-bill"></i>
-                                @lang('Make a deposit')
+                            <a class="dropdown-item {{menuActive('user.wallet')}}" href="{{route('user.wallet')}}">
+                                <i class="fal fa-wallet"></i>
+                                @lang('Wallet · deposits & withdrawals')
                             </a>
                         </li>
-
                         <li>
-                            <a class="dropdown-item {{menuActive('user.payout.money')}}"
-                               href="{{route('user.payout.money')}}">
-                                <i class="fas fa-envelope-open-dollar"></i>
-                                @lang('withdraw funds')
+                            <a class="dropdown-item" href="{{route('user.wallet')}}#wallet-transactions">
+                                <i class="fal fa-receipt"></i>
+                                @lang('Wallet activity')
                             </a>
                         </li>
                         <li>
@@ -195,11 +193,11 @@
 
         @if(Request::routeIs('home', 'category', 'tournament', 'match'))
             <a href="#rightbar" class="text-dark bet-slip-link"
-               aria-label="@lang('Bet Slip')" aria-controls="rightbar"
-               onclick="window.toggleSidebar('rightbar'); return false;">
+               aria-label="@lang('Bet Slip')" aria-controls="rightbar" aria-expanded="false"
+               onclick="window.openSidebar('rightbar'); return false;">
         @else
             <a href="{{ route('home', ['panel' => 'betslip']) }}" class="text-dark bet-slip-link"
-               aria-label="@lang('Open bet slip')" aria-controls="rightbar">
+               aria-label="@lang('Open bet slip')" aria-controls="rightbar" aria-expanded="false">
         @endif
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z"></path>

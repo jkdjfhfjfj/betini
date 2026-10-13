@@ -3,6 +3,7 @@
     <div class="my-1 d-lg-none">
         <button
             class="remove-class-btn light btn-custom"
+            aria-controls="rightbar" aria-expanded="true"
             onclick="removeClass('rightbar')"
         >
             <i class="fal fa-chevron-left"></i> @lang('Back')

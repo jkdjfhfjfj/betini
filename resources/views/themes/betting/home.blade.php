@@ -122,7 +122,12 @@
                 if (new URLSearchParams(window.location.search).get('panel') === 'betslip') {
                     this.$nextTick(function () {
                         var panel = document.getElementById('rightbar');
-                        if (panel) panel.classList.add('active');
+                        if (panel) {
+                            panel.classList.add('active');
+                            document.querySelectorAll('[aria-controls="rightbar"]').forEach(function (trigger) {
+                                trigger.setAttribute('aria-expanded', 'true');
+                            });
+                        }
                     });
                 }
 
