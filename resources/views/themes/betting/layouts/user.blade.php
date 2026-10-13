@@ -68,16 +68,22 @@
                 </a>
             </li>
             <li>
-                <a href="{{route('user.addFund')}}" class="{{menuActive('user.addFund')}}">
-                    <i class="fal fa-money-bill"></i>
-                    @lang('Make A Deposit')
+                <a href="{{route('user.wallet')}}" class="{{menuActive('user.wallet')}}">
+                    <i class="fal fa-wallet"></i>
+                    @lang('Wallet · deposits & withdrawals')
+                </a>
+            </li>
+            <li>
+                <a href="{{route('user.wallet')}}#wallet-transactions">
+                    <i class="fal fa-receipt"></i>
+                    @lang('Wallet activity')
                 </a>
             </li>
 
             <li>
                 <a href="{{route('user.fund-history')}}" class="{{menuActive('user.fund-history')}}">
                     <i class="fal fa-hand-holding-usd"></i>
-                    @lang('deposit history')
+                    @lang('Previous deposit history')
                 </a>
             </li>
             <li>
@@ -99,15 +105,9 @@
                 </a>
             </li>
             <li>
-                <a href="{{route('user.payout.money')}}" class="{{menuActive('user.payout.money')}}">
-                    <i class="fas fa-envelope-open-dollar"></i>
-                    @lang('Withdraw Funds')
-                </a>
-            </li>
-            <li>
                 <a href="{{route('user.payout.history')}}" class="{{menuActive('user.payout.history')}}">
                     <i class="fal fa-wallet"></i>
-                    @lang('payouts history')
+                    @lang('Previous payout history')
                 </a>
             </li>
             <li>

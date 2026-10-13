@@ -71,8 +71,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'user', 'as' => 'user.'], fu
             Route::get('/dashboard', 'User\HomeController@index')->name('home');
             Route::post('/betSlip', 'User\HomeController@betSlip')->name('betSlip');
 
-            Route::get('add-fund', 'User\HomeController@addFund')->name('addFund');
-            Route::post('add-fund', 'PaymentController@addFundRequest')->name('addFund.request');
+            Route::get('add-fund', 'User\WalletController@legacyEntry')->name('addFund');
+            Route::post('add-fund', 'User\WalletController@legacyEntry')->name('addFund.request');
             Route::get('addFundConfirm', 'PaymentController@depositConfirm')->name('addFund.confirm');
             Route::post('addFundConfirm', 'PaymentController@fromSubmit')->name('addFund.fromSubmit');
             Route::get('/wallet', 'User\WalletController@index')->name('wallet');
@@ -104,14 +104,14 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'user', 'as' => 'user.'], fu
             Route::get('push-notification-readAt/{id}', 'SiteNotificationController@readAt')->name('push.notification.readAt');
 
 
-            Route::get('/withdraw', 'User\HomeController@payoutMoney')->name('payout.money');
-            Route::post('/withdraw', 'User\HomeController@payoutMoneyRequest')->name('payout.moneyRequest');
-            Route::get('/withdraw/preview', 'User\HomeController@payoutPreview')->name('payout.preview');
-            Route::post('/withdraw/preview', 'User\HomeController@payoutRequestSubmit')->name('payout.submit');
-            Route::post('/withdraw/paystack/{trx_id}', 'User\HomeController@paystackPayout')->name('payout.submit.paystack');
-            Route::post('/withdraw/flutterwave/{trx_id}', 'User\HomeController@flutterwavePayout')->name('payout.submit.flutterwave');
-            Route::post('withdraw-bank-list', 'User\HomeController@getBankList')->name('payout.getBankList');
-            Route::post('withdraw-bank-from', 'User\HomeController@getBankForm')->name('payout.getBankFrom');
+            Route::get('/withdraw', 'User\WalletController@legacyEntry')->name('payout.money');
+            Route::post('/withdraw', 'User\WalletController@legacyEntry')->name('payout.moneyRequest');
+            Route::get('/withdraw/preview', 'User\WalletController@legacyEntry')->name('payout.preview');
+            Route::post('/withdraw/preview', 'User\WalletController@legacyEntry')->name('payout.submit');
+            Route::post('/withdraw/paystack/{trx_id}', 'User\WalletController@legacyEntry')->name('payout.submit.paystack');
+            Route::post('/withdraw/flutterwave/{trx_id}', 'User\WalletController@legacyEntry')->name('payout.submit.flutterwave');
+            Route::post('withdraw-bank-list', 'User\WalletController@legacyEntry')->name('payout.getBankList');
+            Route::post('withdraw-bank-from', 'User\WalletController@legacyEntry')->name('payout.getBankFrom');
 
             Route::get('withdraw/history', 'User\HomeController@payoutHistory')->name('payout.history');
             Route::get('withdraw/history/search', 'User\HomeController@payoutHistorySearch')->name('payout.history.search');
@@ -305,12 +305,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
 
 
         /*=====Payment Log=====*/
-        Route::get('payment-methods', 'Admin\PaymentMethodController@index')->name('payment.methods');
-        Route::post('payment-methods/deactivate', 'Admin\PaymentMethodController@deactivate')->name('payment.methods.deactivate');
-        Route::get('payment-methods/deactivate', 'Admin\PaymentMethodController@deactivate')->name('payment.methods.deactivate');
-        Route::post('sort-payment-methods', 'Admin\PaymentMethodController@sortPaymentMethods')->name('sort.payment.methods');
-        Route::get('payment-methods/edit/{id}', 'Admin\PaymentMethodController@edit')->name('edit.payment.methods');
-        Route::put('payment-methods/update/{id}', 'Admin\PaymentMethodController@update')->name('update.payment.methods');
+        Route::get('payment-methods', 'Admin\WalletProviderController@legacySettings')->name('payment.methods');
+        Route::match(['get', 'post'], 'payment-methods/deactivate', 'Admin\WalletProviderController@legacySettings')->name('payment.methods.deactivate');
+        Route::post('sort-payment-methods', 'Admin\WalletProviderController@legacySettings')->name('sort.payment.methods');
+        Route::get('payment-methods/edit/{id}', 'Admin\WalletProviderController@legacySettings')->name('edit.payment.methods');
+        Route::put('payment-methods/update/{id}', 'Admin\WalletProviderController@legacySettings')->name('update.payment.methods');
 
 
         // Manual Methods
@@ -328,11 +327,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
 
 
         /*==========Payout Settings============*/
-        Route::get('/payout-method', 'Admin\PayoutGatewayController@index')->name('payout-method');
-        Route::get('/payout-method/create', 'Admin\PayoutGatewayController@create')->name('payout-method.create');
-        Route::post('/payout-method/create', 'Admin\PayoutGatewayController@store')->name('payout-method.store');
-        Route::get('/payout-method/{id}', 'Admin\PayoutGatewayController@edit')->name('payout-method.edit');
-        Route::put('/payout-method/{id}', 'Admin\PayoutGatewayController@update')->name('payout-method.update');
+        Route::get('/payout-method', 'Admin\WalletProviderController@legacySettings')->name('payout-method');
+        Route::get('/payout-method/create', 'Admin\WalletProviderController@legacySettings')->name('payout-method.create');
+        Route::post('/payout-method/create', 'Admin\WalletProviderController@legacySettings')->name('payout-method.store');
+        Route::get('/payout-method/{id}', 'Admin\WalletProviderController@legacySettings')->name('payout-method.edit');
+        Route::put('/payout-method/{id}', 'Admin\WalletProviderController@legacySettings')->name('payout-method.update');
 
         Route::get('/payout-log', 'Admin\PayoutRecordController@index')->name('payout-log');
         Route::get('/payout-log/search', 'Admin\PayoutRecordController@search')->name('payout-log.search');

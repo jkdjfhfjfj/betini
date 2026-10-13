@@ -105,6 +105,14 @@ class WalletController extends Controller
         ]);
     }
 
+    public function legacyEntry(Request $request, $transactionId = null)
+    {
+        return redirect()->route('user.wallet')->with(
+            'notice',
+            'Deposits and withdrawals now use the Wallet page. No request was created from this legacy form.'
+        );
+    }
+
     public function updateCurrency(Request $request)
     {
         $request->merge([

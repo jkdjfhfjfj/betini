@@ -11,6 +11,9 @@
             @if(session('error'))
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
+            @if(session('notice'))
+                <div class="alert alert-info">{{ session('notice') }}</div>
+            @endif
             @if($errors->any())
                 <div class="alert alert-danger">
                     @foreach($errors->all() as $error)
@@ -318,7 +321,7 @@
             </div>
         </div>
 
-        <div class="col-12">
+        <div class="col-12" id="wallet-transactions">
             <div class="card secbg br-4">
                 <div class="card-body">
                     <h4>@lang('Wallet activity')</h4>

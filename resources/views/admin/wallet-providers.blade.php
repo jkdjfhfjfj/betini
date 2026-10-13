@@ -5,6 +5,9 @@
 @section('content')
     <div class="row">
         <div class="col-12">
+            @if(session('notice'))
+                <div class="alert alert-info">{{ session('notice') }}</div>
+            @endif
             @if($configurationWarning)
                 <div class="alert alert-warning">{{ $configurationWarning }}</div>
             @endif

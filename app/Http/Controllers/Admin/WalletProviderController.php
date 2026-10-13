@@ -21,6 +21,14 @@ class WalletProviderController extends Controller
         $this->currencies = $currencies;
     }
 
+    public function legacySettings(Request $request, $methodId = null)
+    {
+        return redirect()->route('admin.wallet-providers')->with(
+            'notice',
+            'Payment and withdrawal routing is now managed under Wallet Providers & Routing. Manual gateways remain available separately.'
+        );
+    }
+
     public function index()
     {
         $settings = [];
