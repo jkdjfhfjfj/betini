@@ -18,14 +18,17 @@ class AdminAuthorizeMiddleware
     {
         $user = Auth::guard('admin')->user();
         $walletPermissions = [
-            'admin.wallet-providers' => 'admin.payment.methods',
-            'admin.wallet-providers.save' => 'admin.edit.payment.methods',
-            'admin.wallet-providers.register-channel' => 'admin.deposit.manual.create',
+            'admin.wallet-providers' => ['admin.wallet-providers', 'admin.payment.methods'],
+            'admin.wallet-providers.save' => ['admin.wallet-providers.save', 'admin.edit.payment.methods'],
+            'admin.wallet-providers.rates' => ['admin.wallet-providers.rates', 'admin.edit.payment.methods'],
+            'admin.wallet-providers.register-channel' => ['admin.wallet-providers.register-channel', 'admin.deposit.manual.create'],
+            'admin.wallet-manual.index' => ['admin.wallet-manual.index', 'admin.payment.pending', 'admin.payment.log', 'admin.payment.methods'],
+            'admin.wallet-manual.review' => ['admin.wallet-manual.review', 'admin.payment.action', 'admin.payment.methods'],
         ];
         $routeName = $request->route()->getName();
         if (isset($walletPermissions[$routeName])) {
             $access = collect($user->admin_access)->flatten()->all();
-            if (in_array($walletPermissions[$routeName], $access, true)) {
+            if (array_intersect((array)$walletPermissions[$routeName], $access)) {
                 return $next($request);
             }
             return redirect()->route('admin.403');

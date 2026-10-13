@@ -8,23 +8,33 @@
     <div class="page-header card card-primary m-0 m-md-4 my-4 m-md-0 p-4 p-md-5 shadow">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
             <div>
-                <h3 class="mb-1">@lang('Manual Wallet Requests')</h3>
-                <p class="text-muted mb-0">Verify manual deposits. Send manual withdrawals before marking them as paid; rejection refunds reserved withdrawal funds.</p>
+                <h3 class="mb-1">@lang('Wallet Transactions')</h3>
+                <p class="text-muted mb-0">Track automatic and manual deposits, withdrawals, and conversions. Only manual requests can be reviewed here; provider transactions are reconciled automatically.</p>
             </div>
-            <span class="badge badge-warning">{{ $transactions->total() }} @lang('requests')</span>
+            <span class="badge badge-warning">{{ $transactions->total() }} @lang('transactions')</span>
         </div>
 
         <form method="get" action="{{ route('admin.wallet-manual.index') }}" class="mb-4">
             <div class="form-row align-items-end">
-                <div class="col-md-4 mb-2">
-                    <label for="manual_direction">@lang('Type')</label>
-                    <select class="form-control" id="manual_direction" name="direction">
-                        <option value="all" @if($direction === 'all') selected @endif>@lang('All requests')</option>
-                        <option value="deposit" @if($direction === 'deposit') selected @endif>@lang('Deposits')</option>
-                        <option value="withdrawal" @if($direction === 'withdrawal') selected @endif>@lang('Withdrawals')</option>
+                <div class="col-md-3 mb-2">
+                    <label for="wallet_provider">@lang('Provider')</label>
+                    <select class="form-control" id="wallet_provider" name="provider">
+                        <option value="all" @if($provider === 'all') selected @endif>@lang('All providers')</option>
+                        @foreach($providers as $providerCode => $providerName)
+                            <option value="{{ $providerCode }}" @if($provider === $providerCode) selected @endif>{{ $providerName }}</option>
+                        @endforeach
                     </select>
                 </div>
-                <div class="col-md-4 mb-2">
+                <div class="col-md-2 mb-2">
+                    <label for="manual_direction">@lang('Type')</label>
+                    <select class="form-control" id="manual_direction" name="direction">
+                        <option value="all" @if($direction === 'all') selected @endif>@lang('All types')</option>
+                        <option value="deposit" @if($direction === 'deposit') selected @endif>@lang('Deposits')</option>
+                        <option value="withdrawal" @if($direction === 'withdrawal') selected @endif>@lang('Withdrawals')</option>
+                        <option value="conversion" @if($direction === 'conversion') selected @endif>@lang('Conversions')</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
                     <label for="manual_status">@lang('Status')</label>
                     <select class="form-control" id="manual_status" name="status">
                         <option value="pending" @if($status === 'pending') selected @endif>@lang('Pending')</option>
@@ -34,8 +44,12 @@
                         <option value="all" @if($status === 'all') selected @endif>@lang('All statuses')</option>
                     </select>
                 </div>
-                <div class="col-md-4 mb-2">
-                    <button class="btn btn-primary" type="submit">@lang('Filter requests')</button>
+                <div class="col-md-3 mb-2">
+                    <label for="wallet_search">@lang('Reference or user')</label>
+                    <input id="wallet_search" class="form-control" name="search" value="{{ $search }}" placeholder="Reference, email, or username">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <button class="btn btn-primary" type="submit">@lang('Filter')</button>
                 </div>
             </div>
         </form>
@@ -45,12 +59,12 @@
                 <thead>
                 <tr>
                     <th>@lang('Reference / User')</th>
-                    <th>@lang('Request')</th>
+                    <th>@lang('Provider / Type')</th>
                     <th>@lang('Amount')</th>
                     <th>@lang('Details')</th>
                     <th>@lang('Status')</th>
-                    <th>@lang('Submitted')</th>
-                    <th>@lang('Review')</th>
+                    <th>@lang('Updated')</th>
+                    <th>@lang('Admin action')</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -63,22 +77,33 @@
                             <small class="text-muted">{{ optional($transaction->user)->email }}</small>
                         </td>
                         <td>
-                            <span class="text-capitalize">{{ $transaction->direction }}</span><br>
-                            <small class="text-muted">
-                                {{ $transaction->direction === 'deposit' ? ($metadata['gateway_name'] ?? 'Manual gateway') : ($metadata['payout_method'] ?? 'Manual payout') }}
-                            </small>
+                            <strong>{{ $providers[$transaction->provider] ?? ucfirst($transaction->provider) }}</strong><br>
+                            <small class="text-muted text-capitalize">{{ $transaction->direction }}</small>
                         </td>
                         <td>
                             {{ $transaction->currency_code }} {{ number_format((float)$transaction->amount, 2) }}
-                            @if($transaction->direction === 'deposit')
+                            @if((float)$transaction->fee > 0)
+                                <br><small class="text-muted">Fee: {{ $transaction->currency_code }} {{ number_format((float)$transaction->fee, 2) }}</small>
+                            @endif
+                            @if($transaction->direction === 'conversion')
+                                <br><small class="text-muted">Net: {{ $transaction->currency_code }} {{ number_format((float)$transaction->net_amount, 2) }}</small>
+                            @elseif($transaction->direction === 'deposit' && $transaction->provider === 'manual')
                                 <br><small class="text-muted">Expected payment: {{ $transaction->currency_code }} {{ number_format((float)($metadata['expected_payment'] ?? $transaction->amount), 2) }}</small>
                             @endif
                         </td>
                         <td>
                             <details>
-                                <summary>@lang('Review details')</summary>
-                                @if($transaction->direction === 'deposit')
+                                <summary>@lang('View details')</summary>
+                                @if($transaction->direction === 'conversion')
+                                    <dl class="mt-2 mb-0">
+                                        <dt>@lang('Converted from')</dt>
+                                        <dd>{{ $metadata['from_currency'] ?? 'USD' }} {{ number_format((float)($metadata['from_amount'] ?? 0), 2) }}</dd>
+                                        <dt>@lang('Conversion fee')</dt>
+                                        <dd>{{ number_format((float)($metadata['fee_percent'] ?? 0), 2) }}%</dd>
+                                    </dl>
+                                @elseif($transaction->provider === 'manual' && $transaction->direction === 'deposit')
                                     <div class="mt-2">
+                                        <strong>{{ $metadata['gateway_name'] ?? 'Manual gateway' }}</strong>
                                         @foreach(($metadata['submitted_fields'] ?? []) as $field)
                                             <div class="mb-2">
                                                 <strong>{{ $field['label'] ?? 'Payment detail' }}:</strong>
@@ -90,7 +115,7 @@
                                             </div>
                                         @endforeach
                                     </div>
-                                @else
+                                @elseif($transaction->provider === 'manual' && $transaction->direction === 'withdrawal')
                                     <dl class="mt-2 mb-0">
                                         <dt>@lang('Account name')</dt>
                                         <dd>{{ $metadata['account_name'] ?? '' }}</dd>
@@ -105,6 +130,23 @@
                                             <dd>{{ $metadata['payment_notes'] }}</dd>
                                         @endif
                                     </dl>
+                                @else
+                                    <dl class="mt-2 mb-0">
+                                        <dt>@lang('Provider reference')</dt>
+                                        <dd>{{ $transaction->provider_reference ?: '—' }}</dd>
+                                        @if(!empty($metadata['payhero_status']))
+                                            <dt>PayHero status</dt>
+                                            <dd>{{ $metadata['payhero_status'] }}</dd>
+                                        @endif
+                                        @if(!empty($metadata['payhero_callback']['receipt_number']))
+                                            <dt>M-Pesa receipt</dt>
+                                            <dd>{{ $metadata['payhero_callback']['receipt_number'] }}</dd>
+                                        @endif
+                                        @if($transaction->last_status_checked_at)
+                                            <dt>@lang('Last status check')</dt>
+                                            <dd>{{ $transaction->last_status_checked_at->format('Y-m-d H:i') }}</dd>
+                                        @endif
+                                    </dl>
                                 @endif
                                 @if(!empty($transaction->failure_reason))
                                     <div class="text-danger mt-2"><strong>@lang('Failure reason'):</strong> {{ $transaction->failure_reason }}</div>
@@ -115,13 +157,16 @@
                             </details>
                         </td>
                         <td>
-                            <span class="badge badge-{{ $transaction->status === 'succeeded' ? 'success' : ($transaction->status === 'failed' ? 'danger' : 'warning') }}">
+                            <span class="badge badge-{{ $transaction->status === 'succeeded' ? 'success' : ($transaction->status === 'failed' ? 'danger' : ($transaction->status === 'processing' ? 'info' : 'warning')) }}">
                                 {{ ucfirst($transaction->status) }}
                             </span>
                         </td>
-                        <td>{{ optional($transaction->created_at)->format('Y-m-d H:i') }}</td>
+                        <td>
+                            {{ optional($transaction->updated_at)->format('Y-m-d H:i') }}<br>
+                            <small class="text-muted">Started {{ optional($transaction->created_at)->format('Y-m-d H:i') }}</small>
+                        </td>
                         <td style="min-width: 230px;">
-                            @if(in_array($transaction->status, ['pending', 'processing'], true))
+                            @if($transaction->provider === 'manual' && in_array($transaction->status, ['pending', 'processing'], true))
                                 <form method="post" action="{{ route('admin.wallet-manual.review', $transaction->id) }}" class="mb-2">
                                     @csrf
                                     <input type="hidden" name="action" value="approve">
@@ -139,13 +184,15 @@
                                     <textarea class="form-control form-control-sm mb-2" name="feedback" rows="2" maxlength="500" placeholder="@lang('Reason for rejection')" required></textarea>
                                     <button class="btn btn-sm btn-danger" type="submit">@lang('Reject')</button>
                                 </form>
-                            @else
+                            @elseif($transaction->provider === 'manual')
                                 <span class="text-muted">@lang('Reviewed')</span>
+                            @else
+                                <span class="text-muted">@lang('Automatic')</span>
                             @endif
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="text-center">@lang('No manual wallet requests found.')</td></tr>
+                    <tr><td colspan="7" class="text-center">@lang('No wallet transactions found.')</td></tr>
                 @endforelse
                 </tbody>
             </table>

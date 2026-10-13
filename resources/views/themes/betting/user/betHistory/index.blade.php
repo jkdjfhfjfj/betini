@@ -7,8 +7,16 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body ">
+                    @if($betInvests->isEmpty())
+                        <div class="bet-history-empty text-center">
+                            <i class="fal fa-receipt" aria-hidden="true"></i>
+                            <h5>@lang('No bet history yet')</h5>
+                            <p>@lang('Your placed bets will appear here, including their status and results.')</p>
+                            <a href="{{ route('home') }}" class="btn-custom">@lang('Browse matches')</a>
+                        </div>
+                    @else
                     <div class="table-parent table-responsive bet-history-table m-0">
-                        <table class="table  table-striped" id="service-table">
+                        <table class="table table-striped" id="service-table">
                             <thead>
                             <tr>
                                 <th>@lang('SL No.')</th>
@@ -50,15 +58,12 @@
                                     </td>
                                 </tr>
                             @empty
-
-                                <tr class="text-center">
-                                    <td colspan="100%">{{__('No Data Found!')}}</td>
-                                </tr>
                             @endforelse
                             </tbody>
                         </table>
                     </div>
                     {{ $betInvests->appends($_GET)->links($theme.'partials.pagination') }}
+                    @endif
                 </div>
             </div>
         </div>

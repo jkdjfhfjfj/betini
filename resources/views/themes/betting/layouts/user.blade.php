@@ -33,7 +33,7 @@
 @include($theme.'partials.nav')
 
 <!-- wrapper -->
-<div class="wrapper">
+<div class="wrapper user-wrapper">
     <!-- leftbar -->
     <div class="leftbar" id="userPanelSideBar">
         <div class="px-2 d-lg-none">

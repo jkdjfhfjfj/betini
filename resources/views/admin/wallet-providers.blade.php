@@ -120,6 +120,24 @@
                                     <div>API key: <strong>{{ !empty($settings['makamesco']['api_key']) ? 'Saved' : 'Not set' }}</strong></div>
                                 </div>
                             </div>
+                            <div class="col-lg-6">
+                                <div class="border rounded p-3 mb-3">
+                                    <h6>CurrencyAPI — exchange rates</h6>
+                                    <p class="text-muted">
+                                        Rates use USD as the base. Get an API key at
+                                        <a href="https://currencyapi.com/docs/authentication" target="_blank" rel="noopener">CurrencyAPI authentication docs</a>.
+                                        The API key is encrypted and never displayed after saving.
+                                    </p>
+                                    <label>CurrencyAPI key</label>
+                                    <input class="form-control mb-2" type="password" name="currencyapi[api_key]" autocomplete="new-password">
+                                    <div class="mb-3">API key: <strong>{{ !empty($settings['currencyapi']['configured']) ? 'Saved' : 'Not set' }}</strong></div>
+                                    <label for="conversion_fee_percent">Wallet conversion fee (%)</label>
+                                    <input id="conversion_fee_percent" class="form-control" type="number"
+                                           name="currencyapi[conversion_fee_percent]" min="0" max="100" step="0.01"
+                                           value="{{ old('currencyapi.conversion_fee_percent', $settings['currencyapi']['conversion_fee_percent'] ?? 0) }}" required>
+                                    <small class="form-text text-muted">Shown to the user in a confirmation quote and deducted from the converted amount.</small>
+                                </div>
+                            </div>
                         </div>
                         <button class="btn btn-primary" type="submit">@lang('Save provider settings')</button>
                     </form>
@@ -175,12 +193,17 @@
 
         <div class="col-12">
             <div class="alert alert-secondary">
-                Currency conversion uses CurrencyLayer. Get an API key at
-                <a href="https://currencylayer.com/product" target="_blank" rel="noopener">currencylayer.com/product</a>,
-                then add it under <a href="{{ route('admin.currency.exchange.api.config') }}">Admin → Exchange API</a>.
-                The wallet rate updater uses HTTPS; the selected CurrencyLayer plan must support HTTPS.
+                Wallet conversion uses CurrencyAPI's USD-base daily rates. Last successful wallet-rate update:
+                <strong>{{ $lastWalletRateUpdate ? \Carbon\Carbon::parse($lastWalletRateUpdate)->format('Y-m-d H:i') : 'Not yet updated' }}</strong>.
+                Save a key and fee above, then update rates:
+                @if(adminAccessRoute(config('role.payment_gateway.access.edit')))
+                    <form method="post" action="{{ route('admin.wallet-providers.rates') }}" class="d-inline-block ml-2">
+                        @csrf
+                        <button class="btn btn-sm btn-outline-primary" type="submit">Update CurrencyAPI rates now</button>
+                    </form>
+                @endif
                 The server's public <code>APP_URL</code> must also use HTTPS so payment callbacks can be registered securely.
-                The server must run <code>php artisan schedule:run</code> every minute to refresh rates and check pending payouts.
+                Configure the host to run <code>php artisan schedule:run</code> every minute; wallet rates refresh daily and pending PayHero deposits and payouts are reconciled every five minutes.
             </div>
         </div>
     </div>

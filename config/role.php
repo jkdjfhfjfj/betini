@@ -177,6 +177,7 @@ $arr = [
                 'admin.edit.payment.methods',
                 'admin.deposit.manual.edit',
                 'admin.wallet-providers.save',
+                'admin.wallet-providers.rates',
             ],
             'delete' => [],
         ],

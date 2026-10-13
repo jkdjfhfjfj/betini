@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\PaymentProviderSetting;
 use App\Models\WalletProviderTransaction;
-use App\Services\Payments\PayHeroClient;
 use App\Services\Payments\PaystackClient;
 use App\Services\Payments\PayzaClient;
+use App\Services\WalletDepositReconciler;
 use App\Services\WalletProviderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -34,27 +34,24 @@ class WalletWebhookController extends Controller
             return response()->json(['error' => 'Unknown payment reference.'], 404);
         }
 
+        $callback = data_get($payload, 'response');
+        if (!is_array($callback)) {
+            $callback = $payload;
+        }
+        $metadata = (array)($entry->metadata ?: []);
+        $metadata['payhero_callback'] = [
+            'status' => data_get($callback, 'Status') ?: data_get($callback, 'status'),
+            'result_code' => data_get($callback, 'ResultCode'),
+            'result_description' => mb_substr((string)(data_get($callback, 'ResultDesc') ?: ''), 0, 250),
+            'checkout_request_id' => data_get($callback, 'CheckoutRequestID'),
+            'receipt_number' => data_get($callback, 'MpesaReceiptNumber'),
+            'received_at' => now()->toIso8601String(),
+        ];
+        $entry->metadata = $metadata;
+        $entry->save();
+
         try {
-            $settings = PaymentProviderSetting::forProvider('payhero')->settings;
-            $status = app(PayHeroClient::class)->transactionStatus($settings, $entry->reference);
-            $state = strtoupper((string)data_get($status, 'status'));
-
-            if ($state === 'SUCCESS') {
-                $amount = data_get($status, 'amount') ?? data_get($status, 'data.amount');
-                $currency = strtoupper((string)(data_get($status, 'currency') ?: data_get($status, 'data.currency')));
-                if ((is_numeric($amount) && abs((float)$amount - (float)$entry->amount) > 0.02)
-                    || ($currency && $currency !== strtoupper($entry->currency_code))) {
-                    app(WalletProviderService::class)->failDeposit($entry->reference, 'The confirmed payment amount or currency did not match this deposit.');
-                    return response()->json(['received' => true]);
-                }
-                app(WalletProviderService::class)->completeDeposit($entry->reference);
-            } elseif ($state === 'FAILED') {
-                app(WalletProviderService::class)->failDeposit(
-                    $entry->reference,
-                    data_get($status, 'ResultDesc') ?: data_get($payload, 'response.ResultDesc') ?: 'PayHero reported a failed payment.'
-                );
-            }
-
+            app(WalletDepositReconciler::class)->syncPayHero($entry);
             return response()->json(['received' => true]);
         } catch (\Throwable $exception) {
             report($exception);

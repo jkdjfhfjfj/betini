@@ -19,7 +19,13 @@
         </a>
     </div>
 
-    <div  :class="{ 'd-none': 0 == betSlip.length }">
+    <div v-if="betSlip.length === 0" class="bet-slip-empty">
+        <i class="fal fa-ticket-alt" aria-hidden="true"></i>
+        <strong>@lang('Your bet slip is empty')</strong>
+        <span>@lang('Choose odds from a match to add your first selection.')</span>
+    </div>
+
+    <div v-else>
         <div class="mb-2">
             <div class="d-flex justify-content-between">
                 <p class="mb-0">@lang('Your Bets') @{{ betSlip.length }}</p>

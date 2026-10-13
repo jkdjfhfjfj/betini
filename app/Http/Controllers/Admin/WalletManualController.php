@@ -17,14 +17,29 @@ class WalletManualController extends Controller
 
     public function index(Request $request)
     {
-        $direction = $request->input('direction', 'all');
-        $status = $request->input('status', 'pending');
+        $provider = is_string($request->input('provider')) ? $request->input('provider') : 'all';
+        $direction = is_string($request->input('direction')) ? $request->input('direction') : 'all';
+        $status = is_string($request->input('status')) ? $request->input('status') : 'all';
+        $search = is_string($request->input('search')) ? trim($request->input('search')) : '';
+        $providers = [
+            'manual' => 'Manual',
+            'payhero' => 'PayHero',
+            'payza' => 'Payza',
+            'paystack' => 'Card (Paystack)',
+            'makamesco' => 'Makamesco',
+            'currencyapi' => 'Currency conversion',
+        ];
 
         $query = WalletProviderTransaction::with('user')
-            ->where('provider', 'manual')
             ->orderByDesc('id');
 
-        if (in_array($direction, ['deposit', 'withdrawal'], true)) {
+        if (array_key_exists($provider, $providers)) {
+            $query->where('provider', $provider);
+        } else {
+            $provider = 'all';
+        }
+
+        if (in_array($direction, ['deposit', 'withdrawal', 'conversion'], true)) {
             $query->where('direction', $direction);
         } else {
             $direction = 'all';
@@ -36,13 +51,29 @@ class WalletManualController extends Controller
             $status = 'all';
         }
 
+        if ($search !== '') {
+            $query->where(function ($filter) use ($search) {
+                $filter->where('reference', 'like', '%' . $search . '%')
+                    ->orWhere('provider_reference', 'like', '%' . $search . '%')
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('email', 'like', '%' . $search . '%')
+                            ->orWhere('username', 'like', '%' . $search . '%')
+                            ->orWhere('firstname', 'like', '%' . $search . '%')
+                            ->orWhere('lastname', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+
         $transactions = $query->paginate(25)->withQueryString();
 
         return view('admin.wallet-manual.index', [
-            'page_title' => 'Manual Wallet Requests',
+            'page_title' => 'Wallet Transactions',
             'transactions' => $transactions,
+            'provider' => $provider,
+            'providers' => $providers,
             'direction' => $direction,
             'status' => $status,
+            'search' => $search,
         ]);
     }
 

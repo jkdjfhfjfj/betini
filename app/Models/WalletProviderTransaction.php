@@ -16,6 +16,9 @@ class WalletProviderTransaction extends Model
         'amount' => 'decimal:4',
         'fee' => 'decimal:4',
         'net_amount' => 'decimal:4',
+        'last_status_checked_at' => 'datetime',
+        'credited_at' => 'datetime',
+        'refunded_at' => 'datetime',
     ];
 
     public function user()

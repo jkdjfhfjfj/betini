@@ -76,6 +76,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'user', 'as' => 'user.'], fu
             Route::get('addFundConfirm', 'PaymentController@depositConfirm')->name('addFund.confirm');
             Route::post('addFundConfirm', 'PaymentController@fromSubmit')->name('addFund.fromSubmit');
             Route::get('/wallet', 'User\WalletController@index')->name('wallet');
+            Route::get('/wallet/currency/quote', 'User\WalletController@currencyQuote')->name('wallet.currency-quote');
             Route::post('/wallet/currency', 'User\WalletController@updateCurrency')->name('wallet.currency');
             Route::post('/wallet/deposit', 'User\WalletController@deposit')->name('wallet.deposit');
             Route::post('/wallet/deposit/manual', 'User\WalletController@manualDeposit')->name('wallet.manual-deposit');
@@ -163,6 +164,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
         Route::get('/dashboard', 'Admin\DashboardController@dashboard')->name('dashboard');
         Route::get('wallet-providers', 'Admin\WalletProviderController@index')->name('wallet-providers');
         Route::post('wallet-providers', 'Admin\WalletProviderController@save')->name('wallet-providers.save');
+        Route::post('wallet-providers/currency-rates', 'Admin\WalletProviderController@updateRates')->name('wallet-providers.rates');
         Route::post('wallet-providers/payhero-channel', 'Admin\WalletProviderController@registerPayHeroChannel')->name('wallet-providers.register-channel');
         Route::get('wallet-manual', 'Admin\WalletManualController@index')->name('wallet-manual.index');
         Route::post('wallet-manual/{id}/review', 'Admin\WalletManualController@review')->name('wallet-manual.review');

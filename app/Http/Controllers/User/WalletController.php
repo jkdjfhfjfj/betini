@@ -8,6 +8,7 @@ use App\Models\Gateway;
 use App\Models\PaymentProviderSetting;
 use App\Models\WalletProviderTransaction;
 use App\Services\CurrencyService;
+use App\Services\PhoneNumberNormalizer;
 use App\Services\Payments\MakamescoClient;
 use App\Services\Payments\PayHeroClient;
 use App\Services\Payments\PaystackClient;
@@ -37,11 +38,26 @@ class WalletController extends Controller
     {
         $user = $this->currencies->initializeUser(auth()->user());
         $currency = strtoupper($user->wallet_currency ?: 'USD');
+        $phoneNormalizer = app(PhoneNumberNormalizer::class);
+        $phoneCode = $phoneNormalizer->dialDigits($user->phone_code);
+        if ($phoneCode === '' && $currency === 'KES') {
+            $phoneCode = '254';
+        }
+        $profilePhone = $user->phone ?: $user->mobile;
+        $oldPhoneInput = old('phone_number');
+        $payheroPhoneInput = $phoneNormalizer->localPart(
+            is_string($oldPhoneInput) ? $oldPhoneInput : $profilePhone,
+            '254'
+        );
+        $payzaPhoneInput = $phoneNormalizer->international(
+            is_string($oldPhoneInput) ? $oldPhoneInput : $profilePhone,
+            $phoneCode
+        );
         $routes = $this->currencies->providerRoutes();
         $transactions = WalletProviderTransaction::where('user_id', $user->id)
             ->orderByDesc('id')
-            ->limit(20)
-            ->get();
+            ->paginate(20)
+            ->withQueryString();
         $manualDepositGateways = Gateway::manual()
             ->where('status', 1)
             ->whereRaw('UPPER(currency) = ?', [$currency])
@@ -69,6 +85,11 @@ class WalletController extends Controller
             'currencies' => $this->currencies->supportedCurrencies(),
             'currency' => $currency,
             'currencySymbol' => $this->currencies->symbol($currency),
+            'phonePrefix' => $phoneCode !== '' ? '+' . $phoneCode : '',
+            'phoneCode' => $phoneCode,
+            'nationalPhone' => $phoneNormalizer->localPart($profilePhone, $phoneCode),
+            'payheroPhoneInput' => $payheroPhoneInput,
+            'payzaPhoneInput' => $payzaPhoneInput,
             'suggestedCurrency' => $this->currencies->currencyForCountry($user->country_code),
             'depositProvider' => $routes[$currency]['deposit'] ?? null,
             'withdrawalProvider' => $routes[$currency]['withdrawal'] ?? null,
@@ -87,6 +108,7 @@ class WalletController extends Controller
         $supportedCurrencies = array_keys($this->currencies->supportedCurrencies());
         $validator = Validator::make($request->all(), [
             'wallet_currency' => ['required', 'string', 'size:3', 'in:' . implode(',', $supportedCurrencies)],
+            'quote_token' => 'nullable|string|max:10000',
         ], [
             'wallet_currency.required' => 'Choose a wallet currency.',
             'wallet_currency.size' => 'Choose a valid three-letter currency code.',
@@ -99,8 +121,17 @@ class WalletController extends Controller
                 ->withInput();
         }
 
+        $currentCurrency = strtoupper(auth()->user()->wallet_currency ?: 'USD');
+        if ($currentCurrency === $request->wallet_currency) {
+            return redirect()->route('user.wallet')->with('success', 'Your wallet already uses ' . $currentCurrency . '.');
+        }
+        if (!$request->filled('quote_token')) {
+            return redirect()->route('user.wallet')
+                ->withErrors(['wallet_currency' => 'Preview and confirm the conversion before changing your wallet currency.']);
+        }
+
         try {
-            $this->currencies->switchWalletCurrency(auth()->user(), $request->wallet_currency);
+            $this->currencies->switchWalletCurrency(auth()->user(), $request->wallet_currency, $request->input('quote_token'));
         } catch (\Illuminate\Validation\ValidationException $exception) {
             return redirect()->route('user.wallet')
                 ->withErrors($exception->errors())
@@ -111,7 +142,38 @@ class WalletController extends Controller
                 ->withInput();
         }
 
-        return redirect()->route('user.wallet')->with('success', 'Wallet currency updated. Your balance was converted using USD as the base.');
+        return redirect()->route('user.wallet')->with('success', 'Wallet currency updated. The conversion fee and final balance were included in your confirmed quote.');
+    }
+
+    public function currencyQuote(Request $request)
+    {
+        $supportedCurrencies = array_keys($this->currencies->supportedCurrencies());
+        $validator = Validator::make([
+            'wallet_currency' => strtoupper(trim((string)$request->input('wallet_currency', ''))),
+        ], [
+            'wallet_currency' => ['required', 'string', 'size:3', 'in:' . implode(',', $supportedCurrencies)],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $quote = $this->currencies->walletCurrencyQuote(
+                $this->currencies->initializeUser(auth()->user()),
+                $validator->validated()['wallet_currency']
+            );
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            return response()->json(['errors' => $exception->errors()], 422);
+        } catch (\Throwable $exception) {
+            return response()->json(['errors' => ['wallet_currency' => [$exception->getMessage()]]], 422);
+        }
+
+        return response()->json([
+            'quote' => $quote,
+            'from_symbol' => $this->currencies->symbol($quote['from_currency']),
+            'to_symbol' => $this->currencies->symbol($quote['to_currency']),
+        ]);
     }
 
     public function deposit(Request $request)
@@ -122,7 +184,9 @@ class WalletController extends Controller
         $provider = $routeMap[$currency]['deposit'] ?? null;
 
         $rules = [
-            'amount' => 'required|numeric|gt:0|max:10000000',
+            'amount' => $provider === 'payhero'
+                ? 'required|integer|min:1|max:10000000'
+                : 'required|numeric|gt:0|max:10000000',
             'phone_number' => 'nullable|string|max:32',
         ];
         if ($currency === 'KES') {
@@ -135,6 +199,24 @@ class WalletController extends Controller
 
         if (!$provider) {
             return back()->with('error', 'No deposit provider is configured for ' . $currency . '.');
+        }
+
+        try {
+            $phoneNormalizer = app(PhoneNumberNormalizer::class);
+            if ($provider === 'payhero') {
+                $request->merge([
+                    'phone_number' => $phoneNormalizer->kenyan($request->input('phone_number') ?: $user->mobile),
+                ]);
+            } elseif ($provider === 'payza') {
+                $phone = $request->input('phone_number') ?: $user->mobile;
+                if (trim((string)$phone) !== '') {
+                    $request->merge([
+                        'phone_number' => $phoneNormalizer->international($phone, $user->phone_code),
+                    ]);
+                }
+            }
+        } catch (\InvalidArgumentException $exception) {
+            return back()->withErrors(['phone_number' => $exception->getMessage()])->withInput();
         }
 
         try {
@@ -374,6 +456,17 @@ class WalletController extends Controller
                 if (!$allowedMethods->contains((string)$request->method)) {
                     return back()->withErrors(['method' => 'Choose a payout method currently supported for ' . $currency . '.'])->withInput();
                 }
+                $selectedMethod = collect($this->normalizeMethods($methodList))->firstWhere('code', (string)$request->method);
+                $methodLabel = strtolower((string)$request->method . ' ' . data_get($selectedMethod, 'name', ''));
+                if (preg_match('/mobile|m-?pesa|mtn|airtel|momo|wallet|phone/', $methodLabel)) {
+                    $mobileAccount = app(PhoneNumberNormalizer::class)->international($request->account_number, $user->phone_code);
+                    if (!preg_match('/^\+[1-9][0-9]{6,14}$/', $mobileAccount)) {
+                        return back()->withErrors([
+                            'account_number' => 'Enter a valid international mobile number, or add your country calling code to your profile before using this payout method.',
+                        ])->withInput();
+                    }
+                    $request->merge(['account_number' => $mobileAccount]);
+                }
             }
             $reference = 'WWD' . strtoupper(Str::random(18));
             $amount = round((float)$request->amount, 2);
@@ -595,12 +688,15 @@ class WalletController extends Controller
 
         if ($provider === 'payza') {
             $settings = $this->providerSettings('payza');
+            $phone = $request->phone_number ?: $user->mobile;
             return app(PayzaClient::class)->initiatePayment($settings, [
                 'amount' => (float)$entry->amount,
                 'currency' => $entry->currency_code,
                 'email' => $user->email,
                 'name' => $user->fullname,
-                'phone' => $request->phone_number ?: $user->mobile,
+                'phone' => trim((string)$phone) !== ''
+                    ? app(PhoneNumberNormalizer::class)->international($phone, $user->phone_code)
+                    : null,
                 'callback_url' => $this->httpsRoute('wallet.payza.webhook'),
                 'redirect_url' => route('wallet.payza.return', ['reference' => $entry->reference], true),
                 'cancel_url' => route('user.wallet', ['reference' => $entry->reference, 'cancelled' => 1], true),
@@ -687,23 +783,7 @@ class WalletController extends Controller
 
     private function syncPayHeroDeposit(WalletProviderTransaction $entry)
     {
-        $status = app(PayHeroClient::class)->transactionStatus(
-            $this->providerSettings('payhero'),
-            $entry->reference
-        );
-        $state = strtoupper((string)(data_get($status, 'status') ?: data_get($status, 'data.status')));
-        if ($state === 'SUCCESS') {
-            $amount = data_get($status, 'amount') ?? data_get($status, 'data.amount');
-            $currency = strtoupper((string)(data_get($status, 'currency') ?: data_get($status, 'data.currency')));
-            if ((is_numeric($amount) && abs((float)$amount - (float)$entry->amount) > 0.02)
-                || ($currency && $currency !== strtoupper($entry->currency_code))) {
-                app(WalletProviderService::class)->failDeposit($entry->reference, 'The confirmed payment amount or currency did not match this deposit.');
-                return;
-            }
-            app(WalletProviderService::class)->completeDeposit($entry->reference);
-        } elseif (in_array($state, ['FAILED', 'CANCELLED', 'REJECTED'], true)) {
-            app(WalletProviderService::class)->failDeposit($entry->reference, 'PayHero reported a failed payment.');
-        }
+        app(\App\Services\WalletDepositReconciler::class)->syncPayHero($entry);
     }
 
     private function syncPayzaDeposit(WalletProviderTransaction $entry)
@@ -812,24 +892,7 @@ class WalletController extends Controller
 
     private function normalizeKenyanPhone($phone)
     {
-        $digits = preg_replace('/\D+/', '', (string)$phone);
-        if (Str::startsWith($digits, '00254')) {
-            $digits = substr($digits, 2);
-        } elseif (preg_match('/^2540(?:7|1)[0-9]{8}$/', $digits)) {
-            $digits = '254' . substr($digits, 4);
-        } elseif (preg_match('/^254254(?:7|1)[0-9]{8}$/', $digits)) {
-            $digits = substr($digits, 3);
-        } elseif (Str::startsWith($digits, '0')) {
-            $digits = '254' . substr($digits, 1);
-        } elseif (Str::startsWith($digits, '7') || Str::startsWith($digits, '1')) {
-            $digits = '254' . $digits;
-        }
-
-        if (!preg_match('/^254(?:7|1)[0-9]{8}$/', $digits)) {
-            throw new RuntimeException('Enter a valid Kenyan mobile number in 07xx, 01xx, or 254 format.');
-        }
-
-        return $digits;
+        return app(PhoneNumberNormalizer::class)->kenyan($phone);
     }
 
     private function httpsRoute($routeName)

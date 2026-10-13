@@ -176,8 +176,14 @@
             <span class="nav-label">@lang('Live')</span>
         </a>
 
-        <a href="javascript:void(0)" class="text-dark bet-slip-link"
-           aria-label="@lang('Bet Slip')" onclick="toggleSidebar('rightbar')">
+        @if(Request::routeIs('home', 'category', 'tournament', 'match'))
+            <a href="#rightbar" class="text-dark bet-slip-link"
+               aria-label="@lang('Bet Slip')" aria-controls="rightbar"
+               onclick="window.toggleSidebar('rightbar'); return false;">
+        @else
+            <a href="{{ route('home', ['panel' => 'betslip']) }}" class="text-dark bet-slip-link"
+               aria-label="@lang('Open bet slip')" aria-controls="rightbar">
+        @endif
             <i class="fal fa-ticket-alt"></i>
             <span class="nav-label">@lang('Bet Slip')</span>
         </a>
@@ -185,7 +191,7 @@
         @auth
             <a href="{{ route('user.betHistory') }}" class="text-dark {{ Request::routeIs('user.betHistory') ? 'active' : '' }}" @if(Request::routeIs('user.betHistory')) aria-current="page" @endif>
                 <i class="fal fa-receipt"></i>
-                <span class="nav-label">@lang('My Bets')</span>
+                <span class="nav-label">@lang('Bet History')</span>
             </a>
             <a href="{{ route('user.profile') }}" class="text-dark {{ Request::routeIs('user.profile') ? 'active' : '' }}" @if(Request::routeIs('user.profile')) aria-current="page" @endif>
                 <i class="fal fa-user"></i>
@@ -194,7 +200,7 @@
         @else
             <a href="{{ route('login') }}" class="text-dark">
                 <i class="fal fa-receipt"></i>
-                <span class="nav-label">@lang('My Bets')</span>
+                <span class="nav-label">@lang('Bet History')</span>
             </a>
             <a href="{{ route('login') }}" class="text-dark">
                 <i class="fal fa-user"></i>

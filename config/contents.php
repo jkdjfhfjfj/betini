@@ -7,13 +7,17 @@ return [
             'short_description' => 'textarea',
             'button_name' => 'text',
             'button_link' => 'url',
+            'secondary_button_name' => 'text',
+            'secondary_button_link' => 'url',
             'image' => 'file'
         ],
         'validation' => [
             'name.*' => 'required|max:100',
-            'description.*' => 'required|max:2000',
+            'short_description.*' => 'required|max:2000',
             'button_name.*' => 'required|max:100',
             'button_link.*' => 'required',
+            'secondary_button_name.*' => 'nullable|max:100',
+            'secondary_button_link.*' => 'nullable|string|max:500',
             'image.*' => 'nullable|max:3072|image|mimes:jpg,jpeg,png'
         ],
         'size' => [
@@ -105,6 +109,7 @@ return [
         'thumbnail' => 'file',
         'youtube_link' => 'url',
         'button_link' => 'url',
+        'secondary_button_link' => 'url',
         'link' => 'url',
         'icon' => 'icon'
     ]

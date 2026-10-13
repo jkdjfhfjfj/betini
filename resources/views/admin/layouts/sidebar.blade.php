@@ -163,13 +163,6 @@
                 @if(adminAccessRoute(config('role.payment_gateway.access.view')))
                     <li class="list-divider"></li>
                     <li class="nav-small-cap"><span class="hide-menu">@lang('Payment Settings')</span></li>
-                    <li class="sidebar-item {{menuActive(['admin.payment.methods','admin.edit.payment.methods'],3)}}">
-                        <a class="sidebar-link" href="{{route('admin.payment.methods')}}"
-                           aria-expanded="false">
-                            <i class="fas fa-credit-card text-success"></i>
-                            <span class="hide-menu">@lang('Payment Methods')</span>
-                        </a>
-                    </li>
                     <li class="sidebar-item {{menuActive(['admin.wallet-providers*'],3)}}">
                         <a class="sidebar-link" href="{{route('admin.wallet-providers')}}" aria-expanded="false">
                             <i class="fas fa-wallet text-info"></i>
@@ -201,7 +194,7 @@
                     <li class="sidebar-item {{menuActive(['admin.wallet-manual*'],3)}}">
                         <a class="sidebar-link" href="{{route('admin.wallet-manual.index')}}" aria-expanded="false">
                             <i class="fas fa-exchange-alt text-success"></i>
-                            <span class="hide-menu">@lang('Manual Wallet Requests')</span>
+                            <span class="hide-menu">@lang('Wallet Transactions')</span>
                         </a>
                     </li>
                 @endif
@@ -210,14 +203,6 @@
                 @if(adminAccessRoute(config('role.payout_manage.access.view')))
                     <li class="list-divider"></li>
                     <li class="nav-small-cap"><span class="hide-menu">@lang('Payout Settings')</span></li>
-                    <li class="sidebar-item {{menuActive(['admin.payout-method*'],3)}}">
-                        <a class="sidebar-link" href="{{route('admin.payout-method')}}"
-                           aria-expanded="false">
-                            <i class="fas fa-credit-card text-success"></i>
-                            <span class="hide-menu">@lang('Payout Methods')</span>
-                        </a>
-                    </li>
-
                     <li class="sidebar-item {{menuActive(['admin.payout-request'],3)}}">
                         <a class="sidebar-link" href="{{route('admin.payout-request')}}" aria-expanded="false">
                             <i class="fas fa-hand-holding-usd text-warning"></i>

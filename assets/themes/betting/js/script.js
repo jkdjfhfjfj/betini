@@ -23,14 +23,47 @@ const previewImage = (id) => {
 };
 
 // toggle sidebar
-const toggleSidebar = (id) => {
+window.toggleSidebar = (id) => {
     const element = document.getElementById(id);
+    if (!element) return false;
     element.classList.toggle("active");
+    return true;
 };
-const removeClass = (id) => {
+window.removeClass = (id) => {
     const element = document.getElementById(id);
+    if (!element) return false;
     element.classList.remove("active");
+    return true;
 };
+
+window.toggleSportsMore = (button) => {
+    const menuId = button && button.getAttribute("aria-controls");
+    const menu = menuId ? document.getElementById(menuId) : null;
+    if (!menu) return false;
+
+    const open = menu.hidden;
+    menu.hidden = !open;
+    button.setAttribute("aria-expanded", String(open));
+    return open;
+};
+
+document.addEventListener("click", (event) => {
+    const categoryBar = document.getElementById("sportsCategoryBar");
+    if (!categoryBar || categoryBar.contains(event.target)) return;
+
+    const menu = document.getElementById("moreSportsMenu");
+    const button = categoryBar.querySelector(".category-more");
+    if (menu && !menu.hidden) menu.hidden = true;
+    if (button) button.setAttribute("aria-expanded", "false");
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const menu = document.getElementById("moreSportsMenu");
+    const button = document.querySelector("#sportsCategoryBar .category-more");
+    if (menu) menu.hidden = true;
+    if (button) button.setAttribute("aria-expanded", "false");
+});
 
 // // dark mode
 // const darkMode = () => {

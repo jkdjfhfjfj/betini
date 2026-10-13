@@ -37,11 +37,13 @@ class SupportController extends Controller
         return view($this->theme.'user.support.index', compact('tickets', 'page_title'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $page_title = "New Ticket";
         $user = $this->user;
-        return view($this->theme.'user.support.create', compact('page_title', 'user'));
+        $subject = old('subject', $request->query('subject', ''));
+        $message = old('message', $request->query('message', ''));
+        return view($this->theme.'user.support.create', compact('page_title', 'user', 'subject', 'message'));
     }
 
     public function store(Request $request)

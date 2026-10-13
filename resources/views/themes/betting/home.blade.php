@@ -119,6 +119,12 @@
                 this.getSlip();
                 this.getEvents();
 
+                if (new URLSearchParams(window.location.search).get('panel') === 'betslip') {
+                    this.$nextTick(function () {
+                        var panel = document.getElementById('rightbar');
+                        if (panel) panel.classList.add('active');
+                    });
+                }
 
             },
             methods: {
@@ -176,14 +182,13 @@
                     localStorage.setItem("newBetSlip", JSON.stringify(_this.betSlip));
                 },
                 getSlip() {
-                    var _this = this;
-                    var selectData = JSON.parse(localStorage.getItem('newBetSlip'));
-                    if (selectData != null) {
-                        _this.betSlip = selectData;
-                    } else {
-                        _this.betSlip = []
+                    try {
+                        var selectData = JSON.parse(localStorage.getItem('newBetSlip') || '[]');
+                        this.betSlip = Array.isArray(selectData) ? selectData : [];
+                    } catch (error) {
+                        this.betSlip = [];
                     }
-                    _this.totalOdds = _this.oddsCalc(_this.betSlip)
+                    this.totalOdds = this.oddsCalc(this.betSlip)
                 },
 
                 removeItem(obj) {

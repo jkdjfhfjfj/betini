@@ -14,7 +14,7 @@
                                 <label>@lang('Subject')</label>
                                 <div class="form-group input-box mb-3">
                                     <input class="form-control" type="text" name="subject"
-                                           value="{{old('subject')}}" placeholder="@lang('Enter Subject')">
+                                           value="{{ $subject }}" placeholder="@lang('Enter Subject')">
                                     @error('subject')
                                     <div class="error text-danger">@lang($message) </div>
                                     @enderror
@@ -25,8 +25,8 @@
                                 <label>@lang('Message')</label>
                                 <div class="form-group input-box mb-3">
                                     <textarea class="form-control ticket-box" name="message" rows="5"
-                                              id="textarea1"
-                                              placeholder="@lang('Enter Message')">{{old('message')}}</textarea>
+                                               id="textarea1"
+                                               placeholder="@lang('Enter Message')">{{ $message }}</textarea>
                                     @error('message')
                                     <div class="error text-danger">@lang($message) </div>
                                     @enderror

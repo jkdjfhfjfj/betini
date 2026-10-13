@@ -164,9 +164,10 @@ class ContentController extends Controller
         // save contents media
         if ($request->hasAny(array_keys(config('contents.content_media')))) {
             $contentMedia = ContentMedia::where(['content_id' => $content->id])->firstOrNew();
+            $contentMediaDescription = (array)($contentMedia->description ?: []);
 
             foreach (config('contents.content_media') as $key => $media) {
-                $old_data = optional($contentMedia->description)->{$key} ?? null;
+                $old_data = $contentMediaDescription[$key] ?? (optional($contentMedia->description)->{$key} ?? null);
                 if ($request->hasFile($key)) {
                     $size =  null;
                     $thumb =  null;
@@ -179,7 +180,8 @@ class ContentController extends Controller
 
                     $contentMediaDescription[$key] = $this->uploadImage($purifiedData[$key][$language], config('location.content.path'), $size, $old_data, $thumb);
                 } elseif ($request->has($key)) {
-                    $contentMediaDescription[$key] = linkToEmbed($purifiedData[$key][$language]);
+                    $mediaValue = data_get($purifiedData, $key . '.' . $language);
+                    $contentMediaDescription[$key] = trim((string)$mediaValue) === '' ? null : linkToEmbed($mediaValue);
                 } elseif (isset($old_data)) {
                     $contentMediaDescription[$key] = $old_data;
                 }

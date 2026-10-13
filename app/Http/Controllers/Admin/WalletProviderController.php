@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CurrencyRate;
 use App\Models\PaymentProviderSetting;
 use App\Services\CurrencyService;
 use App\Services\Payments\PayHeroClient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -30,6 +32,18 @@ class WalletProviderController extends Controller
                 $settings[$provider] = [];
                 $configurationWarning = 'Saved credentials cannot be decrypted. Confirm the server APP_KEY is unchanged.';
             }
+        }
+        try {
+            $currencyApi = PaymentProviderSetting::forProvider('currencyapi')->settings;
+            $settings['currencyapi'] = [
+                'configured' => !empty($currencyApi['api_key']),
+                'conversion_fee_percent' => $currencyApi['conversion_fee_percent'] ?? 0,
+            ];
+            $lastWalletRateUpdate = CurrencyRate::where('source', 'currencyapi')->max('fetched_at');
+        } catch (\Throwable $exception) {
+            $settings['currencyapi'] = ['configured' => false, 'conversion_fee_percent' => 0];
+            $lastWalletRateUpdate = null;
+            $configurationWarning = 'CurrencyAPI settings or wallet rates could not be read. Check the database and server APP_KEY.';
         }
 
         try {
@@ -56,6 +70,7 @@ class WalletProviderController extends Controller
             'routeOptions' => $routeOptions,
             'currencies' => $this->currencies->supportedCurrencies(),
             'configurationWarning' => $configurationWarning,
+            'lastWalletRateUpdate' => $lastWalletRateUpdate,
         ]);
     }
 
@@ -70,6 +85,8 @@ class WalletProviderController extends Controller
             'payza.webhook_secret' => 'nullable|string|max:500',
             'paystack.secret_key' => 'nullable|string|max:500',
             'makamesco.api_key' => 'nullable|string|max:500',
+            'currencyapi.api_key' => 'nullable|string|max:500',
+            'currencyapi.conversion_fee_percent' => 'required|numeric|between:0,100',
         ]);
 
         try {
@@ -79,6 +96,7 @@ class WalletProviderController extends Controller
                     'payza' => ['public_key', 'secret_key', 'webhook_secret'],
                     'paystack' => ['secret_key'],
                     'makamesco' => ['api_key'],
+                    'currencyapi' => ['api_key', 'conversion_fee_percent'],
                 ] as $provider => $fields) {
                     $record = PaymentProviderSetting::forProvider($provider);
                     $values = $record->settings;
@@ -86,6 +104,8 @@ class WalletProviderController extends Controller
                         $value = $request->input($provider . '.' . $field);
                         if (is_string($value) && trim($value) !== '') {
                             $values[$field] = trim($value);
+                        } elseif ($field === 'conversion_fee_percent' && is_numeric($value)) {
+                            $values[$field] = (float)$value;
                         }
                     }
                     $record->settings = $values;
@@ -117,6 +137,22 @@ class WalletProviderController extends Controller
         }
 
         return redirect()->route('admin.wallet-providers')->with('success', 'Provider settings and currency routes saved.');
+    }
+
+    public function updateRates()
+    {
+        $settings = PaymentProviderSetting::forProvider('currencyapi')->settings;
+        if (empty($settings['api_key'])) {
+            return back()->with('error', 'Save a CurrencyAPI key before updating wallet rates.');
+        }
+
+        $exitCode = Artisan::call('wallet:rates:update');
+        if ($exitCode !== 0) {
+            return back()->with('error', trim(Artisan::output()) ?: 'CurrencyAPI did not return usable rates.');
+        }
+
+        return redirect()->route('admin.wallet-providers')
+            ->with('success', 'CurrencyAPI wallet rates were updated. ' . trim(Artisan::output()));
     }
 
     public function registerPayHeroChannel(Request $request)

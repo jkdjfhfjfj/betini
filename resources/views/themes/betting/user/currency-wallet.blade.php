@@ -3,7 +3,7 @@
 @section('title', trans('Wallet'))
 
 @section('content')
-    <div class="row g-3">
+    <div class="row g-3 wallet-page">
         <div class="col-12">
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
@@ -27,7 +27,7 @@
             </div>
         </div>
 
-        <div class="col-lg-4">
+        <div class="col-lg-4 wallet-balance-column">
             <div class="card secbg br-4">
                 <div class="card-body">
                     <p class="mb-1">@lang('Available balance')</p>
@@ -37,17 +37,18 @@
             </div>
         </div>
 
-        <div class="col-lg-8">
+        <div class="col-lg-8 wallet-currency-column">
             <div class="card secbg br-4">
                 <div class="card-body">
                     <h4>@lang('Wallet currency')</h4>
                     <p class="text-muted">
                         New accounts default to the currency mapped to their country.
                         Suggested for your country: <strong>{{ $suggestedCurrency }}</strong>.
-                        Changing currency converts your available balance and is blocked while bets or payments are pending.
+                        Changing currency converts your available balance. A current exchange rate and the administrator's fee are shown before you confirm.
                     </p>
-                    <form method="post" action="{{ route('user.wallet.currency') }}" class="row align-items-end">
+                    <form id="wallet-currency-form" method="post" action="{{ route('user.wallet.currency') }}" class="row align-items-end">
                         @csrf
+                        <input id="wallet-currency-quote-token" type="hidden" name="quote_token" value="">
                         <div class="col-md-8">
                             <label for="wallet_currency">@lang('Default wallet currency')</label>
                             <select id="wallet_currency" name="wallet_currency" class="form-control" required>
@@ -59,19 +60,22 @@
                             </select>
                         </div>
                         <div class="col-md-4 mt-2 mt-md-0">
-                            <button type="submit" class="btn-custom w-100">@lang('Update currency')</button>
+                            <button type="submit" class="btn-custom w-100">Review conversion</button>
+                        </div>
+                        <div class="col-12">
+                            <div id="wallet-currency-quote-result" class="mt-3" role="status" aria-live="polite" hidden></div>
                         </div>
                     </form>
                     @if(!$rateAvailable)
                         <div class="alert alert-warning mt-3 mb-0">
-                            No current USD exchange rate is stored for {{ $currency }}. Native-currency deposits and withdrawals still work, but betting and balance conversion require an administrator to configure CurrencyLayer and update rates.
+                            No current USD exchange rate is stored for {{ $currency }}. Native-currency deposits and withdrawals still work, but betting and balance conversion require an administrator to configure CurrencyAPI and update rates.
                         </div>
                     @endif
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-6">
+        <div class="col-lg-6 wallet-flow-panel wallet-deposit-panel">
             <div class="card secbg br-4 h-100">
                 <div class="card-body">
                     <h4>@lang('Deposit')</h4>
@@ -88,12 +92,28 @@
                         @csrf
                         <div class="form-group mb-3">
                             <label for="deposit_amount">@lang('Amount') ({{ $currency }})</label>
-                            <input id="deposit_amount" class="form-control" type="number" name="amount" min="0.01" step="0.01" value="{{ old('amount') }}" required>
+                            <input id="deposit_amount" class="form-control" type="number" name="amount" min="{{ $depositProvider === 'payhero' ? '1' : '0.01' }}" step="{{ $depositProvider === 'payhero' ? '1' : '0.01' }}" value="{{ old('amount') }}" required>
                         </div>
-                        @if($currency === 'KES')
+                        @if(in_array($depositProvider, ['payhero', 'payza'], true))
                             <div class="form-group mb-3">
-                                <label for="deposit_phone">@lang('M-Pesa phone number')</label>
-                                <input id="deposit_phone" class="form-control" type="tel" name="phone_number" value="{{ old('phone_number', $user->mobile) }}" placeholder="07xx or 2547xx" required>
+                                <label for="deposit_phone">{{ $depositProvider === 'payhero' ? 'M-Pesa phone number' : 'Phone number (optional)' }}</label>
+                                <div class="input-group">
+                                    @if($depositProvider === 'payhero')
+                                        <span class="input-group-text">+254</span>
+                                    @endif
+                                    <input id="deposit_phone" class="form-control" type="tel" name="phone_number"
+                                           value="{{ $depositProvider === 'payhero' ? $payheroPhoneInput : $payzaPhoneInput }}"
+                                           placeholder="{{ $depositProvider === 'payhero' ? '712345678' : '+254712345678' }}"
+                                           @if($depositProvider === 'payhero') required @endif
+                                           aria-describedby="deposit-phone-help">
+                                </div>
+                                <small id="deposit-phone-help" class="form-text text-muted">
+                                    @if($depositProvider === 'payhero')
+                                        Enter a Kenyan number without +254; the country code is added once.
+                                    @else
+                                        Enter the full international number, including its country calling code. Duplicate saved prefixes are normalized.
+                                    @endif
+                                </small>
                             </div>
                         @endif
                         <button class="btn-custom w-100" type="submit" @if(!$depositProvider) disabled @endif>
@@ -103,11 +123,18 @@
                             @endif
                         </button>
                     </form>
+                    @if(in_array($depositProvider, ['payhero', 'payza', 'paystack'], true))
+                        <div class="wallet-support-actions border rounded p-3 mt-3">
+                            <p class="mb-2"><strong>Deposit debited but not credited?</strong> Open a support ticket with the transaction reference, or view the support phone and email on our contact page.</p>
+                            <a class="btn btn-outline-primary btn-sm mr-2" href="{{ route('user.ticket.create', ['subject' => 'Wallet deposit not credited']) }}">Open support ticket</a>
+                            <a class="btn btn-outline-secondary btn-sm" href="{{ route('contact') }}">View support contacts</a>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-6">
+        <div class="col-lg-6 wallet-flow-panel wallet-withdraw-panel">
             <div class="card secbg br-4 h-100">
                 <div class="card-body">
                     <h4>@lang('Withdraw')</h4>
@@ -126,9 +153,22 @@
                         </div>
                         <div class="form-group mb-3">
                             <label for="account_number">{{ $withdrawalProvider === 'makamesco' ? 'Safaricom M-Pesa number' : 'Account number / wallet address' }}</label>
-                            <input id="account_number" class="form-control" name="account_number" maxlength="80" value="{{ old('account_number', $withdrawalProvider === 'makamesco' ? $user->mobile : '') }}" @if($withdrawalProvider === 'makamesco') type="tel" inputmode="tel" autocomplete="tel" placeholder="2547XXXXXXXX or 07XXXXXXXX" aria-describedby="mpesa-number-help" @endif required>
                             @if($withdrawalProvider === 'makamesco')
-                                <small id="mpesa-number-help" class="form-text text-muted">Enter a Kenyan Safaricom number as 2547…, 2541…, 07…, or 01…. A leading + is also accepted.</small>
+                                <div class="input-group">
+                                    <span class="input-group-text">+254</span>
+                                    <input id="account_number" class="form-control" name="account_number" maxlength="32"
+                                           type="tel" inputmode="tel" autocomplete="tel"
+                                           value="{{ old('account_number', $phoneCode === '254' ? $nationalPhone : '') }}"
+                                           placeholder="712345678" aria-describedby="mpesa-number-help" required>
+                                </div>
+                            @else
+                                <input id="account_number" class="form-control" name="account_number" maxlength="80"
+                                       value="{{ old('account_number') }}" required>
+                            @endif
+                            @if($withdrawalProvider === 'makamesco')
+                                <small id="mpesa-number-help" class="form-text text-muted">Enter the local Kenyan number without +254; the country code is added once.</small>
+                            @elseif($withdrawalProvider === 'payza')
+                                <small class="form-text text-muted">For mobile-money methods, use the number's saved country code once. Bank account numbers are sent unchanged.</small>
                             @endif
                         </div>
                         @if($withdrawalProvider === 'payza')
@@ -159,7 +199,7 @@
         </div>
 
         @if($manualDepositGateways->isNotEmpty())
-            <div class="col-lg-6">
+            <div class="col-lg-6 wallet-flow-panel wallet-manual-deposit-panel">
                 <div class="card secbg br-4 h-100">
                     <div class="card-body">
                         <h4>@lang('Manual deposit options') ({{ $currency }})</h4>
@@ -236,7 +276,7 @@
             </div>
         @endif
 
-        <div class="col-lg-6">
+        <div class="col-lg-6 wallet-flow-panel wallet-manual-withdraw-panel">
             <div class="card secbg br-4 h-100">
                 <div class="card-body">
                     <h4>@lang('Manual withdrawal') ({{ $currency }})</h4>
@@ -281,8 +321,8 @@
         <div class="col-12">
             <div class="card secbg br-4">
                 <div class="card-body">
-                    <h4>@lang('Recent wallet activity')</h4>
-                    <div class="table-responsive">
+                    <h4>@lang('Wallet activity')</h4>
+                    <div class="table-responsive wallet-activity-table">
                         <table class="table table-striped">
                             <thead>
                             <tr>
@@ -290,35 +330,66 @@
                                 <th>@lang('Type')</th>
                                 <th>@lang('Provider')</th>
                                 <th>@lang('Amount')</th>
+                                <th>@lang('Fee')</th>
+                                <th>@lang('Wallet credit / net')</th>
+                                <th>@lang('Provider reference')</th>
                                 <th>@lang('Status')</th>
                                 <th>@lang('Date')</th>
+                                <th>@lang('Support')</th>
                             </tr>
                             </thead>
                             <tbody>
                             @forelse($transactions as $transaction)
                                 <tr>
-                                    <td>{{ $transaction->reference }}</td>
-                                    <td>{{ ucfirst($transaction->direction) }}</td>
-                                    <td>{{ $transaction->provider === 'paystack' ? 'Card (Paystack)' : ($transaction->provider === 'manual' ? 'Manual (admin review)' : ucfirst($transaction->provider)) }}</td>
-                                    <td>{{ data_get($currencies, $transaction->currency_code . '.symbol', $transaction->currency_code) }} {{ number_format((float)$transaction->amount, 2) }} {{ $transaction->currency_code }}</td>
-                                    <td>
+                                    <td data-label="@lang('Reference')"><span class="wallet-reference">{{ $transaction->reference }}</span></td>
+                                    <td data-label="@lang('Type')">{{ ucfirst($transaction->direction) }}</td>
+                                    <td data-label="@lang('Provider')">{{ $transaction->provider === 'paystack' ? 'Card (Paystack)' : ($transaction->provider === 'manual' ? 'Manual (admin review)' : ($transaction->direction === 'conversion' ? 'Currency conversion' : ucfirst($transaction->provider))) }}</td>
+                                    <td data-label="@lang('Amount')">{{ data_get($currencies, $transaction->currency_code . '.symbol', $transaction->currency_code) }} {{ number_format((float)$transaction->amount, 2) }} {{ $transaction->currency_code }}</td>
+                                    <td data-label="@lang('Fee')">{{ data_get($currencies, $transaction->currency_code . '.symbol', $transaction->currency_code) }} {{ number_format((float)$transaction->fee, 2) }} {{ $transaction->currency_code }}</td>
+                                    <td data-label="@lang('Wallet credit / net')">{{ data_get($currencies, $transaction->currency_code . '.symbol', $transaction->currency_code) }} {{ number_format((float)$transaction->net_amount, 2) }} {{ $transaction->currency_code }}</td>
+                                    <td data-label="@lang('Provider reference')">{{ $transaction->provider_reference ?: '—' }}</td>
+                                    <td data-label="@lang('Status')">
                                         @if($transaction->status === 'succeeded')
                                             <span class="badge bg-success">Successful</span>
                                         @elseif($transaction->status === 'failed')
                                             <span class="badge bg-danger">Failed</span>
                                             @if($transaction->failure_reason)<small class="d-block">{{ $transaction->failure_reason }}</small>@endif
+                                        @elseif($transaction->status === 'processing')
+                                            <span class="badge bg-info">Processing</span>
                                         @else
                                             <span class="badge bg-warning">{{ ucfirst($transaction->status) }}</span>
                                         @endif
                                     </td>
-                                    <td>{{ optional($transaction->created_at)->format('d M Y H:i') }}</td>
+                                    <td data-label="@lang('Date')">
+                                        {{ optional($transaction->created_at)->format('d M Y H:i') }}
+                                        @if($transaction->updated_at && $transaction->updated_at != $transaction->created_at)
+                                            <small class="d-block text-muted">@lang('Updated') {{ optional($transaction->updated_at)->format('d M Y H:i') }}</small>
+                                        @endif
+                                    </td>
+                                    <td data-label="@lang('Support')">
+                                        @if($transaction->direction === 'deposit' && $transaction->provider !== 'manual')
+                                            <a class="btn btn-outline-primary btn-sm"
+                                               href="{{ route('user.ticket.create', [
+                                                    'subject' => 'Wallet deposit not credited — ' . $transaction->reference,
+                                                    'message' => 'Please investigate this wallet deposit.' . "\n\n"
+                                                        . 'Provider: ' . $transaction->provider . "\n"
+                                                        . 'Amount: ' . number_format((float)$transaction->amount, 2) . ' ' . $transaction->currency_code . "\n"
+                                                        . 'App reference: ' . $transaction->reference . "\n"
+                                                        . 'Provider reference: ' . ($transaction->provider_reference ?: 'not yet available') . "\n"
+                                                        . 'Current status: ' . $transaction->status,
+                                                ]) }}">Contact support</a>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="6" class="text-center">@lang('No wallet activity yet.')</td></tr>
+                                <tr><td colspan="10" class="text-center">@lang('No wallet activity yet.')</td></tr>
                             @endforelse
                             </tbody>
                         </table>
                     </div>
+                    <div class="mt-3">{{ $transactions->links() }}</div>
                 </div>
             </div>
         </div>
@@ -327,6 +398,100 @@
 
 @push('script')
     <script>
+        (function () {
+            const form = document.getElementById('wallet-currency-form');
+            const currencySelect = document.getElementById('wallet_currency');
+            const result = document.getElementById('wallet-currency-quote-result');
+            const tokenInput = document.getElementById('wallet-currency-quote-token');
+            if (!form || !currencySelect || !result || !tokenInput) return;
+
+            let submittingConfirmedQuote = false;
+            const setMessage = function (message, style) {
+                result.hidden = false;
+                result.className = 'alert mt-3 ' + style;
+                result.textContent = message;
+            };
+
+            currencySelect.addEventListener('change', function () {
+                tokenInput.value = '';
+                result.hidden = true;
+                result.replaceChildren();
+            });
+
+            form.addEventListener('submit', async function (event) {
+                if (submittingConfirmedQuote) return;
+                event.preventDefault();
+                tokenInput.value = '';
+                result.hidden = false;
+                result.className = 'alert alert-info mt-3';
+                result.textContent = 'Getting the latest conversion quote…';
+
+                try {
+                    const params = new URLSearchParams({wallet_currency: currencySelect.value});
+                    const response = await fetch(@json(route('user.wallet.currency-quote')) + '?' + params.toString(), {
+                        headers: {'Accept': 'application/json'}
+                    });
+                    const data = await response.json();
+                    if (!response.ok) {
+                        const errors = data.errors ? Object.values(data.errors).flat().join(' ') : 'Could not create a conversion quote.';
+                        setMessage(errors, 'alert-danger');
+                        return;
+                    }
+
+                    const quote = data.quote;
+                    if (!quote.token) {
+                        setMessage('Your wallet already uses ' + quote.to_currency + '. No conversion is needed.', 'alert-secondary');
+                        return;
+                    }
+
+                    result.replaceChildren();
+                    result.className = 'alert alert-info mt-3 wallet-conversion-quote';
+                    result.hidden = false;
+                    const title = document.createElement('strong');
+                    title.textContent = 'Confirm wallet conversion';
+                    result.appendChild(title);
+                    const list = document.createElement('ul');
+                    list.className = 'mb-3 mt-2';
+                    const lines = [
+                        'Current balance: ' + data.from_symbol + ' ' + Number(quote.current_balance).toFixed(2) + ' ' + quote.from_currency,
+                        'Converted amount before fee: ' + data.to_symbol + ' ' + Number(quote.gross_amount).toFixed(2) + ' ' + quote.to_currency,
+                        'Conversion fee (' + Number(quote.fee_percent).toFixed(2) + '%): ' + data.to_symbol + ' ' + Number(quote.fee_amount).toFixed(2) + ' ' + quote.to_currency,
+                        'New available balance: ' + data.to_symbol + ' ' + Number(quote.net_amount).toFixed(2) + ' ' + quote.to_currency
+                    ];
+                    lines.forEach(function (line) {
+                        const item = document.createElement('li');
+                        item.textContent = line;
+                        list.appendChild(item);
+                    });
+                    result.appendChild(list);
+
+                    const confirm = document.createElement('button');
+                    confirm.type = 'button';
+                    confirm.className = 'btn btn-success btn-sm mr-2';
+                    confirm.textContent = 'Confirm conversion';
+                    confirm.addEventListener('click', function () {
+                        tokenInput.value = quote.token;
+                        submittingConfirmedQuote = true;
+                        form.requestSubmit();
+                    });
+                    result.appendChild(confirm);
+
+                    const cancel = document.createElement('button');
+                    cancel.type = 'button';
+                    cancel.className = 'btn btn-outline-secondary btn-sm';
+                    cancel.textContent = 'Cancel';
+                    cancel.addEventListener('click', function () {
+                        tokenInput.value = '';
+                        result.hidden = true;
+                        result.replaceChildren();
+                    });
+                    result.appendChild(cancel);
+                } catch (error) {
+                    setMessage('Could not reach the rate service. Try again later or contact support.', 'alert-danger');
+                }
+            });
+        })();
+
         document.querySelectorAll('.manual-wallet-deposit-form').forEach(function (form) {
             const amountInput = form.querySelector('.manual-wallet-amount');
             const totalLabel = form.querySelector('.manual-wallet-total');
