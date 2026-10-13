@@ -225,11 +225,17 @@ class WalletController extends Controller
         }
 
         $amount = round((float)$request->input('amount'), 2);
+        if ($amount <= 0) {
+            return back()->withInput()->withErrors(['amount' => 'Enter an amount of at least 0.01 ' . $currency . '.']);
+        }
         $minimum = (float)$gateway->min_amount;
         $maximum = (float)$gateway->max_amount;
         if (($minimum > 0 && $amount < $minimum) || ($maximum > 0 && $amount > $maximum)) {
+            $limits = $maximum > 0
+                ? 'between ' . $minimum . ' and ' . $maximum
+                : 'at least ' . $minimum;
             return back()->withInput()->withErrors([
-                'amount' => 'The deposit amount must be between ' . $minimum . ' and ' . $maximum . ' ' . $currency . '.',
+                'amount' => 'The deposit amount must be ' . $limits . ' ' . $currency . '.',
             ]);
         }
 
@@ -452,6 +458,9 @@ class WalletController extends Controller
         $user = $this->currencies->initializeUser(auth()->user());
         $currency = strtoupper($user->wallet_currency ?: 'USD');
         $amount = round((float)$request->input('amount'), 2);
+        if ($amount <= 0) {
+            return back()->withInput()->withErrors(['amount' => 'Enter an amount of at least 0.01 ' . $currency . '.']);
+        }
         $rate = $this->optionalRateSnapshot($currency);
         $reference = 'WMW' . strtoupper(Str::random(18));
 

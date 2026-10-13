@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\WalletWebhookController;
+use App\Http\Controllers\Admin\WalletManualController;
 use App\Http\Controllers\Admin\WalletProviderController;
 use App\Http\Controllers\User\WalletController;
 use App\Models\PaymentProviderSetting;
@@ -486,6 +487,93 @@ class WalletProviderSafetyTest extends TestCase
         });
     }
 
+    public function test_manual_deposit_is_credited_once_after_admin_approval()
+    {
+        $user = $this->createUser(10, 'KES');
+        DB::table('gateways')->insert([
+            'id' => 1000,
+            'code' => 'manual-test',
+            'name' => 'Manual KES transfer',
+            'status' => 1,
+            'parameters' => json_encode([
+                'receipt' => [
+                    'field_level' => 'Receipt reference',
+                    'type' => 'text',
+                    'validation' => 'required',
+                ],
+            ]),
+            'currency' => 'KES',
+            'symbol' => 'KSh',
+            'min_amount' => 1,
+            'max_amount' => 1000,
+            'fixed_charge' => 1,
+            'percentage_charge' => 2,
+            'convention_rate' => 1,
+            'sort_by' => 1,
+            'note' => 'Use the approved transfer instructions.',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+        $submit = Request::create('/user/wallet/deposit/manual', 'POST', [
+            'gateway_id' => 1000,
+            'amount' => 50,
+            'payment_fields' => [0 => 'receipt-123'],
+        ]);
+        app(WalletController::class)->manualDeposit($submit);
+
+        $entry = WalletProviderTransaction::where('provider', 'manual')->firstOrFail();
+        $this->assertSame('pending', $entry->status);
+        $this->assertEquals(52, (float)data_get($entry->metadata, 'expected_payment'));
+        $this->assertEquals(10, (float)$user->fresh()->balance);
+
+        $approve = Request::create('/admin/wallet-manual/' . $entry->id . '/review', 'POST', [
+            'action' => 'approve',
+            'feedback' => 'Transfer verified',
+            'provider_reference' => 'verified-receipt-123',
+        ]);
+        app(WalletManualController::class)->review($approve, $entry->id);
+        app(WalletManualController::class)->review($approve, $entry->id);
+
+        $this->assertSame('succeeded', $entry->fresh()->status);
+        $this->assertEquals(60, (float)$user->fresh()->balance);
+        $this->assertSame(1, Transaction::where('trx_id', $entry->reference)->count());
+    }
+
+    public function test_rejected_manual_withdrawal_refunds_reserved_balance_only_once()
+    {
+        $user = $this->createUser(80, 'KES');
+        $this->actingAs($user);
+        $submit = Request::create('/user/wallet/withdraw/manual', 'POST', [
+            'amount' => 30,
+            'payout_method' => 'Bank transfer',
+            'account_name' => 'Test Player',
+            'account_number' => '001234567',
+            'bank_name' => 'Test Bank',
+            'payment_notes' => 'Test payout',
+        ]);
+        app(WalletController::class)->manualWithdraw($submit);
+
+        $entry = WalletProviderTransaction::where('provider', 'manual')
+            ->where('direction', 'withdrawal')
+            ->firstOrFail();
+        $this->assertSame('pending', $entry->status);
+        $this->assertEquals(50, (float)$user->fresh()->balance);
+
+        $reject = Request::create('/admin/wallet-manual/' . $entry->id . '/review', 'POST', [
+            'action' => 'reject',
+            'feedback' => 'Account details could not be verified.',
+        ]);
+        app(WalletManualController::class)->review($reject, $entry->id);
+        app(WalletManualController::class)->review($reject, $entry->id);
+
+        $this->assertSame('failed', $entry->fresh()->status);
+        $this->assertNotNull($entry->fresh()->refunded_at);
+        $this->assertEquals(80, (float)$user->fresh()->balance);
+        $this->assertSame(2, Transaction::count());
+    }
+
     private function createIsolatedSchema()
     {
         Schema::create('users', function (Blueprint $table) {
@@ -543,6 +631,26 @@ class WalletProviderSafetyTest extends TestCase
             $table->decimal('usd_to_currency', 20, 10);
             $table->string('source', 40)->default('manual');
             $table->timestamp('fetched_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('gateways', function (Blueprint $table) {
+            $table->id();
+            $table->string('code')->nullable();
+            $table->string('name');
+            $table->string('image')->nullable();
+            $table->boolean('status')->default(1);
+            $table->text('parameters')->nullable();
+            $table->text('currencies')->nullable();
+            $table->string('currency', 3)->default('USD');
+            $table->string('symbol')->nullable();
+            $table->decimal('min_amount', 20, 4)->default(0);
+            $table->decimal('max_amount', 20, 4)->default(0);
+            $table->decimal('percentage_charge', 20, 4)->default(0);
+            $table->decimal('fixed_charge', 20, 4)->default(0);
+            $table->decimal('convention_rate', 20, 10)->default(1);
+            $table->integer('sort_by')->default(0);
+            $table->text('note')->nullable();
             $table->timestamps();
         });
 

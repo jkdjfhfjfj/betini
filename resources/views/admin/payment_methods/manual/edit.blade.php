@@ -176,6 +176,7 @@
                                 <div class="col-sm-12 col-md-9">
                                     <div class="form-group ">
                                         <label>@lang('Note')</label>
+                                        <small class="form-text text-muted">Wallet deposit instructions are shown to users with this currency. Add a clickable payment link using the editor's link tool.</small>
                                         <textarea class="form-control summernote" name="note" id="summernote" rows="15">{{old('note',$method->note)}}</textarea>
                                         @error('note')
                                         <span class="text-danger">{{ trans($message) }}</span>

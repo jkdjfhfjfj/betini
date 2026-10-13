@@ -78,7 +78,9 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'user', 'as' => 'user.'], fu
             Route::get('/wallet', 'User\WalletController@index')->name('wallet');
             Route::post('/wallet/currency', 'User\WalletController@updateCurrency')->name('wallet.currency');
             Route::post('/wallet/deposit', 'User\WalletController@deposit')->name('wallet.deposit');
+            Route::post('/wallet/deposit/manual', 'User\WalletController@manualDeposit')->name('wallet.manual-deposit');
             Route::post('/wallet/withdraw', 'User\WalletController@withdraw')->name('wallet.withdraw');
+            Route::post('/wallet/withdraw/manual', 'User\WalletController@manualWithdraw')->name('wallet.manual-withdraw');
             Route::get('/wallet/payout-methods', 'User\WalletController@payoutMethods')->name('wallet.payout-methods');
             Route::get('/wallet/status/{reference}', 'User\WalletController@status')->name('wallet.status');
 
@@ -162,6 +164,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
         Route::get('wallet-providers', 'Admin\WalletProviderController@index')->name('wallet-providers');
         Route::post('wallet-providers', 'Admin\WalletProviderController@save')->name('wallet-providers.save');
         Route::post('wallet-providers/payhero-channel', 'Admin\WalletProviderController@registerPayHeroChannel')->name('wallet-providers.register-channel');
+        Route::get('wallet-manual', 'Admin\WalletManualController@index')->name('wallet-manual.index');
+        Route::post('wallet-manual/{id}/review', 'Admin\WalletManualController@review')->name('wallet-manual.review');
 
         Route::get('/staff', 'Admin\ManageRolePermissionController@staff')->name('staff');
         Route::post('/staff', 'Admin\ManageRolePermissionController@storeStaff')->name('storeStaff');

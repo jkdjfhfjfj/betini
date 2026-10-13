@@ -189,10 +189,12 @@ $arr = [
                 'admin.payment.pending',
                 'admin.payment.log',
                 'admin.payment.search',
+                'admin.wallet-manual.index',
             ],
             'add' => [],
             'edit' => [
-                'admin.payment.action'
+                'admin.payment.action',
+                'admin.wallet-manual.review',
             ],
             'delete' => [],
         ],

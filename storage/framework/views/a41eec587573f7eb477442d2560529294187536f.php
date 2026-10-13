@@ -198,6 +198,12 @@
                             <span class="hide-menu"><?php echo app('translator')->get('Payment Log'); ?></span>
                         </a>
                     </li>
+                    <li class="sidebar-item <?php echo e(menuActive(['admin.wallet-manual*'],3)); ?>">
+                        <a class="sidebar-link" href="<?php echo e(route('admin.wallet-manual.index')); ?>" aria-expanded="false">
+                            <i class="fas fa-exchange-alt text-success"></i>
+                            <span class="hide-menu"><?php echo app('translator')->get('Manual Wallet Requests'); ?></span>
+                        </a>
+                    </li>
                 <?php endif; ?>
 
 

@@ -193,6 +193,7 @@ unset($__errorArgs, $__bag); ?>
                                 <div class="col-sm-12 col-md-9">
                                     <div class="form-group ">
                                         <label><?php echo app('translator')->get('Note'); ?></label>
+                                        <small class="form-text text-muted">Wallet deposit instructions are shown to users with this currency. Add a clickable payment link using the editor's link tool.</small>
                                         <textarea class="form-control summernote" name="note" id="summernote" rows="15"><?php echo e(old('note')); ?></textarea>
                                         <?php $__errorArgs = ['note'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');

@@ -198,6 +198,12 @@
                             <span class="hide-menu">@lang('Payment Log')</span>
                         </a>
                     </li>
+                    <li class="sidebar-item {{menuActive(['admin.wallet-manual*'],3)}}">
+                        <a class="sidebar-link" href="{{route('admin.wallet-manual.index')}}" aria-expanded="false">
+                            <i class="fas fa-exchange-alt text-success"></i>
+                            <span class="hide-menu">@lang('Manual Wallet Requests')</span>
+                        </a>
+                    </li>
                 @endif
 
 

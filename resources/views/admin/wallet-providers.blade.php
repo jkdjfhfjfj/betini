@@ -18,7 +18,7 @@
             <div class="card card-primary m-0 m-md-4 my-4 shadow">
                 <div class="card-body">
                     <h5 class="card-title font-weight-bold">@lang('Automatic provider routing')</h5>
-                    <p class="text-muted">KES deposits are fixed to PayHero M-Pesa STK, and KES withdrawals are fixed to Makamesco B2C.</p>
+                    <p class="text-muted">Automatic KES deposits remain on PayHero M-Pesa STK and automatic KES withdrawals remain on Makamesco B2C. Active manual gateways and manual payout requests are separate administrator-reviewed alternatives.</p>
                     @if(adminAccessRoute(config('role.payment_gateway.access.edit')))
                     <form method="post" action="{{ route('admin.wallet-providers.save') }}">
                         @csrf
