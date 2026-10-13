@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS `wallet_provider_transactions` (
     `provider_reference` VARCHAR(191) NULL,
     `metadata` LONGTEXT NULL,
     `failure_reason` VARCHAR(500) NULL,
+    `last_status_checked_at` TIMESTAMP(6) NULL,
     `credited_at` TIMESTAMP NULL DEFAULT NULL,
     `refunded_at` TIMESTAMP NULL DEFAULT NULL,
     `created_at` TIMESTAMP NULL DEFAULT NULL,

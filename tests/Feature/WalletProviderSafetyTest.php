@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Console\Commands\WalletPayoutStatusSync;
 use App\Http\Controllers\WalletWebhookController;
 use App\Models\PaymentProviderSetting;
 use App\Models\Transaction;
@@ -75,7 +74,7 @@ class WalletProviderSafetyTest extends TestCase
 
         $this->assertSame(200, $firstResponse->getStatusCode());
         $this->assertSame(200, $secondResponse->getStatusCode());
-        $this->assertSame('17.50', $user->fresh()->balance);
+        $this->assertEquals(17.5, (float)$user->fresh()->balance);
         $this->assertSame('succeeded', $entry->fresh()->status);
         $this->assertSame(1, Transaction::where('trx_id', $entry->reference)->count());
         Http::assertSentCount(2);
@@ -118,7 +117,7 @@ class WalletProviderSafetyTest extends TestCase
 
         $this->assertSame(200, $firstResponse->getStatusCode());
         $this->assertSame(200, $secondResponse->getStatusCode());
-        $this->assertSame('28.00', $user->fresh()->balance);
+        $this->assertEquals(28, (float)$user->fresh()->balance);
         $this->assertSame('succeeded', $entry->fresh()->status);
         $this->assertSame(1, Transaction::where('trx_id', $entry->reference)->count());
         Http::assertSentCount(2);
@@ -157,7 +156,7 @@ class WalletProviderSafetyTest extends TestCase
         ));
 
         $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('10.00', $user->fresh()->balance);
+        $this->assertEquals(10, (float)$user->fresh()->balance);
         $this->assertSame('failed', $entry->fresh()->status);
         $this->assertSame(0, Transaction::count());
     }
@@ -190,7 +189,7 @@ class WalletProviderSafetyTest extends TestCase
         ], $body));
 
         $this->assertSame(401, $invalid->getStatusCode());
-        $this->assertSame('7.00', $user->fresh()->balance);
+        $this->assertEquals(7, (float)$user->fresh()->balance);
         Http::assertNothingSent();
 
         $signature = hash_hmac('sha512', $body, $secretKey);
@@ -203,7 +202,7 @@ class WalletProviderSafetyTest extends TestCase
 
         $this->assertSame(200, $firstResponse->getStatusCode());
         $this->assertSame(200, $secondResponse->getStatusCode());
-        $this->assertSame('38.00', $user->fresh()->balance);
+        $this->assertEquals(38, (float)$user->fresh()->balance);
         $this->assertSame('succeeded', $entry->fresh()->status);
         $this->assertSame(1, Transaction::where('trx_id', $entry->reference)->count());
         Http::assertSentCount(2);
@@ -230,21 +229,26 @@ class WalletProviderSafetyTest extends TestCase
 
         Http::fake([
             'https://payzaapi.co.ke/api/v1/payouts*' => Http::sequence()
+                ->push(['success' => false, 'message' => 'temporarily unavailable'], 503)
                 ->push(['success' => true, 'data' => ['payout' => ['status' => 'pending']]], 200)
                 ->push(['success' => true, 'data' => ['payout' => ['status' => 'completed']]], 200),
         ]);
 
         $this->artisan('wallet:payouts:sync')->assertExitCode(0);
         $this->assertSame('processing', $entry->fresh()->status);
-        $this->assertSame('60.00', $user->fresh()->balance);
+        $this->assertEquals(60, (float)$user->fresh()->balance);
         $this->assertSame(0, Transaction::count());
+
+        $this->artisan('wallet:payouts:sync')->assertExitCode(0);
+        $this->assertSame('processing', $entry->fresh()->status);
+        $this->assertEquals(60, (float)$user->fresh()->balance);
 
         $this->artisan('wallet:payouts:sync')->assertExitCode(0);
 
         $this->assertSame('succeeded', $entry->fresh()->status);
-        $this->assertSame('60.00', $user->fresh()->balance);
+        $this->assertEquals(60, (float)$user->fresh()->balance);
         $this->assertSame(0, Transaction::count());
-        Http::assertSentCount(2);
+        Http::assertSentCount(3);
     }
 
     public function test_failed_makamesco_payout_refunds_once_and_is_not_retried_after_failure()
@@ -273,9 +277,48 @@ class WalletProviderSafetyTest extends TestCase
 
         $this->assertSame('failed', $entry->fresh()->status);
         $this->assertNotNull($entry->fresh()->refunded_at);
-        $this->assertSame('100.00', $user->fresh()->balance);
+        $this->assertEquals(100, (float)$user->fresh()->balance);
         $this->assertSame(1, Transaction::where('trx_id', $entry->reference . '-refund')->count());
         Http::assertSentCount(1);
+    }
+
+    public function test_payout_status_checks_rotate_beyond_the_first_hundred_pending_records()
+    {
+        $user = $this->createUser(500, 'USD');
+        $this->saveProviderSettings('payza', [
+            'public_key' => 'payza-test-public',
+            'secret_key' => 'payza-test-secret',
+            'webhook_secret' => 'payza-webhook-test-secret',
+        ]);
+
+        for ($index = 1; $index <= 101; $index++) {
+            $this->createProviderTransaction($user, [
+                'reference' => 'payza-payout-queue-' . $index,
+                'provider' => 'payza',
+                'direction' => 'withdrawal',
+                'currency_code' => 'USD',
+                'amount' => 1,
+                'net_amount' => 1,
+                'provider_reference' => 'queue-' . $index,
+                'status' => 'processing',
+            ]);
+        }
+
+        Http::fake([
+            'https://payzaapi.co.ke/api/v1/payouts*' => Http::response([
+                'success' => true,
+                'data' => ['payout' => ['status' => 'pending']],
+            ], 200),
+        ]);
+
+        $this->artisan('wallet:payouts:sync')->assertExitCode(0);
+        Http::assertSentCount(100);
+
+        $this->artisan('wallet:payouts:sync')->assertExitCode(0);
+        Http::assertSentCount(200);
+        Http::assertSent(function ($request) {
+            return strpos($request->url(), 'reference=queue-101') !== false;
+        });
     }
 
     private function createIsolatedSchema()
@@ -316,6 +359,7 @@ class WalletProviderSafetyTest extends TestCase
             $table->string('provider_reference', 191)->nullable();
             $table->text('metadata')->nullable();
             $table->string('failure_reason', 500)->nullable();
+            $table->timestamp('last_status_checked_at')->nullable();
             $table->timestamp('credited_at')->nullable();
             $table->timestamp('refunded_at')->nullable();
             $table->timestamps();
