@@ -43,59 +43,31 @@
             </div>
         </div>
 
-        <div class="col-lg-8 wallet-currency-column">
-            <div class="card secbg br-4">
-                <div class="card-body">
-                    <h4>@lang('Wallet currency')</h4>
-                    <p class="text-muted">
-                        New accounts default to the currency mapped to their country.
-                        Suggested for your country: <strong>{{ $suggestedCurrency }}</strong>.
-                        Changing currency converts your available balance. A current exchange rate and the administrator's fee are shown before you confirm.
-                    </p>
-                    <form id="wallet-currency-form" method="post" action="{{ route('user.wallet.currency') }}" class="row align-items-end">
-                        @csrf
-                        <input id="wallet-currency-quote-token" type="hidden" name="quote_token" value="">
-                        <div class="col-md-8">
-                            <label for="wallet_currency">@lang('Default wallet currency')</label>
-                            <select id="wallet_currency" name="wallet_currency" class="form-control" required>
-                                @foreach($currencies as $code => $details)
-                                    <option value="{{ $code }}" {{ $targetCurrency === $code ? 'selected' : '' }}>
-                                        {{ $details['name'] }} ({{ $code }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4 mt-2 mt-md-0">
-                            <button type="submit" class="btn-custom w-100">Review conversion</button>
-                        </div>
-                        <div class="col-12">
-                            <div id="wallet-currency-quote-result" class="mt-3" role="status" aria-live="polite" hidden></div>
-                        </div>
-                    </form>
-                    @if(!$rateAvailable)
-                        <div class="alert alert-warning mt-3 mb-0">
-                            No current USD exchange rate is stored for {{ $currency }}. Native-currency deposits and withdrawals still work, but betting and balance conversion require an administrator to configure CurrencyLayer and update rates.
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12">
-            <div class="wallet-operation-switcher" role="group" aria-label="Choose wallet action">
+        <div class="col-12 wallet-operation-tabs-column">
+            <div class="wallet-operation-switcher wallet-operation-tabs" role="tablist" aria-label="Wallet actions">
                 <button type="button"
                         class="wallet-operation-choice"
+                        id="wallet-deposit-tab"
+                        role="tab"
                         data-wallet-operation-choice="deposit"
+                        aria-controls="wallet-deposit-automatic wallet-deposit-manual"
+                        aria-selected="{{ $activeWalletOperation === 'deposit' ? 'true' : 'false' }}"
+                        tabindex="{{ $activeWalletOperation === 'deposit' ? '0' : '-1' }}"
                         aria-pressed="{{ $activeWalletOperation === 'deposit' ? 'true' : 'false' }}">
-                    <span class="wallet-operation-choice-title">Deposit funds</span>
-                    <span class="wallet-operation-choice-description">Automatic and manual deposit options</span>
+                    <span class="wallet-operation-choice-title">Deposit</span>
+                    <span class="wallet-operation-choice-description">Automatic or manual</span>
                 </button>
                 <button type="button"
                         class="wallet-operation-choice"
+                        id="wallet-withdrawal-tab"
+                        role="tab"
                         data-wallet-operation-choice="withdrawal"
+                        aria-controls="wallet-withdraw-automatic wallet-withdraw-manual"
+                        aria-selected="{{ $activeWalletOperation === 'withdrawal' ? 'true' : 'false' }}"
+                        tabindex="{{ $activeWalletOperation === 'withdrawal' ? '0' : '-1' }}"
                         aria-pressed="{{ $activeWalletOperation === 'withdrawal' ? 'true' : 'false' }}">
-                    <span class="wallet-operation-choice-title">Withdraw funds</span>
-                    <span class="wallet-operation-choice-description">Provider and admin-reviewed withdrawals</span>
+                    <span class="wallet-operation-choice-title">Withdraw</span>
+                    <span class="wallet-operation-choice-description">Automatic or admin-reviewed</span>
                 </button>
             </div>
             <p class="wallet-operation-help" id="wallet-operation-help" aria-live="polite">
@@ -107,7 +79,50 @@
             </p>
         </div>
 
-        <div class="col-lg-6 wallet-flow-panel wallet-deposit-panel" id="wallet-deposit-automatic" data-wallet-operation-panel="deposit">
+        <div class="col-12 wallet-currency-column">
+            <details class="wallet-currency-settings">
+                <summary>Wallet currency and conversion settings</summary>
+                <div class="card secbg br-4">
+                    <div class="card-body">
+                        <h4>@lang('Wallet currency')</h4>
+                        <p class="text-muted">
+                            New accounts default to the currency mapped to their country.
+                            Suggested for your country: <strong>{{ $suggestedCurrency }}</strong>.
+                            Changing currency converts your available balance. A current exchange rate and the administrator's fee are shown before you confirm.
+                        </p>
+                        <form id="wallet-currency-form" method="post" action="{{ route('user.wallet.currency') }}" class="row align-items-end">
+                            @csrf
+                            <input id="wallet-currency-quote-token" type="hidden" name="quote_token" value="">
+                            <div class="col-md-8">
+                                <label for="wallet_currency">@lang('Default wallet currency')</label>
+                                <select id="wallet_currency" name="wallet_currency" class="form-control" required>
+                                    @foreach($currencies as $code => $details)
+                                        <option value="{{ $code }}" {{ $targetCurrency === $code ? 'selected' : '' }}>
+                                            {{ $details['name'] }} ({{ $code }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4 mt-2 mt-md-0">
+                                <button type="submit" class="btn-custom w-100">Review conversion</button>
+                            </div>
+                            <div class="col-12">
+                                <div id="wallet-currency-quote-result" class="mt-3" role="status" aria-live="polite" hidden></div>
+                            </div>
+                        </form>
+                        @if(!$rateAvailable)
+                            <div class="alert alert-warning mt-3 mb-0">
+                                No current USD exchange rate is stored for {{ $currency }}. Native-currency deposits and withdrawals still work, but betting and balance conversion require an administrator to configure CurrencyLayer and update rates.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="col-lg-6 wallet-flow-panel wallet-deposit-panel" id="wallet-deposit-automatic"
+             role="tabpanel" aria-labelledby="wallet-deposit-tab" tabindex="0"
+             data-wallet-operation-panel="deposit" @if($activeWalletOperation !== 'deposit') hidden @endif>
             <div class="card secbg br-4 h-100">
                 <div class="card-body">
                     <h4>@lang('Deposit')</h4>
@@ -167,7 +182,9 @@
             </div>
         </div>
 
-        <div class="col-lg-6 wallet-flow-panel wallet-withdraw-panel" id="wallet-withdraw-automatic" data-wallet-operation-panel="withdrawal">
+        <div class="col-lg-6 wallet-flow-panel wallet-withdraw-panel" id="wallet-withdraw-automatic"
+             role="tabpanel" aria-labelledby="wallet-withdrawal-tab" tabindex="0"
+             data-wallet-operation-panel="withdrawal" @if($activeWalletOperation !== 'withdrawal') hidden @endif>
             <div class="card secbg br-4 h-100">
                 <div class="card-body">
                     <h4>@lang('Withdraw')</h4>
@@ -233,7 +250,9 @@
         </div>
 
         @if($manualDepositGateways->isNotEmpty())
-            <div class="col-lg-6 wallet-flow-panel wallet-manual-deposit-panel" id="wallet-deposit-manual" data-wallet-operation-panel="deposit">
+            <div class="col-lg-6 wallet-flow-panel wallet-manual-deposit-panel" id="wallet-deposit-manual"
+                 role="tabpanel" aria-labelledby="wallet-deposit-tab" tabindex="0"
+                 data-wallet-operation-panel="deposit" @if($activeWalletOperation !== 'deposit') hidden @endif>
                 <div class="card secbg br-4 h-100">
                     <div class="card-body">
                         <h4>@lang('Manual deposit options') ({{ $currency }})</h4>
@@ -309,9 +328,24 @@
                     </div>
                 </div>
             </div>
+        @else
+            <div class="col-lg-6 wallet-flow-panel wallet-manual-deposit-panel" id="wallet-deposit-manual"
+                 role="tabpanel" aria-labelledby="wallet-deposit-tab" tabindex="0"
+                 data-wallet-operation-panel="deposit" @if($activeWalletOperation !== 'deposit') hidden @endif>
+                <div class="card secbg br-4 h-100">
+                    <div class="card-body">
+                        <h4>@lang('Manual deposit options') ({{ $currency }})</h4>
+                        <div class="alert alert-info mb-0">
+                            Manual deposits are not currently enabled for {{ $currency }}. Use the automatic option above or ask an administrator to activate a manual gateway for this currency.
+                        </div>
+                    </div>
+                </div>
+            </div>
         @endif
 
-        <div class="col-lg-6 wallet-flow-panel wallet-manual-withdraw-panel" id="wallet-withdraw-manual" data-wallet-operation-panel="withdrawal">
+        <div class="col-lg-6 wallet-flow-panel wallet-manual-withdraw-panel" id="wallet-withdraw-manual"
+             role="tabpanel" aria-labelledby="wallet-withdrawal-tab" tabindex="0"
+             data-wallet-operation-panel="withdrawal" @if($activeWalletOperation !== 'withdrawal') hidden @endif>
             <div class="card secbg br-4 h-100">
                 <div class="card-body">
                     <h4>@lang('Manual withdrawal') ({{ $currency }})</h4>
@@ -537,10 +571,15 @@
         };
         const setWalletOperation = function (operation) {
             walletOperationButtons.forEach(function (button) {
-                button.setAttribute('aria-pressed', button.dataset.walletOperationChoice === operation ? 'true' : 'false');
+                const selected = button.dataset.walletOperationChoice === operation;
+                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+                button.setAttribute('aria-selected', selected ? 'true' : 'false');
+                button.tabIndex = selected ? 0 : -1;
             });
             walletOperationPanels.forEach(function (panel) {
-                panel.hidden = panel.dataset.walletOperationPanel !== operation;
+                const visible = panel.dataset.walletOperationPanel === operation;
+                panel.hidden = !visible;
+                panel.setAttribute('aria-hidden', visible ? 'false' : 'true');
             });
             if (walletOperationHelp && walletOperationDescriptions[operation]) {
                 walletOperationHelp.textContent = walletOperationDescriptions[operation];
@@ -549,6 +588,25 @@
         walletOperationButtons.forEach(function (button) {
             button.addEventListener('click', function () {
                 setWalletOperation(button.dataset.walletOperationChoice);
+            });
+            button.addEventListener('keydown', function (event) {
+                const currentIndex = Array.prototype.indexOf.call(walletOperationButtons, button);
+                let nextIndex = currentIndex;
+                if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                    nextIndex = (currentIndex + 1) % walletOperationButtons.length;
+                } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                    nextIndex = (currentIndex - 1 + walletOperationButtons.length) % walletOperationButtons.length;
+                } else if (event.key === 'Home') {
+                    nextIndex = 0;
+                } else if (event.key === 'End') {
+                    nextIndex = walletOperationButtons.length - 1;
+                } else {
+                    return;
+                }
+                event.preventDefault();
+                const nextButton = walletOperationButtons[nextIndex];
+                nextButton.focus();
+                setWalletOperation(nextButton.dataset.walletOperationChoice);
             });
         });
         setWalletOperation(@json($activeWalletOperation));
