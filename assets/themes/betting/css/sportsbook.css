@@ -1535,6 +1535,8 @@ body.auth-screen .login-section .auth-form-card { border: 0 !important; }
     .wallet-page .wallet-operation-choice { min-height: 56px; padding: 8px 5px; }
     .wallet-page .wallet-operation-choice-title { font-size: 13px; }
     .wallet-page .wallet-operation-choice-description { font-size: 10px; }
+    .wallet-page > [class*="col-"] { min-width: 0; }
+    .wallet-page .wallet-operation-help { overflow-wrap: anywhere; }
 }
 
 /* One stable header and drawer system; keep these overrides after legacy theme rules. */
@@ -1698,7 +1700,7 @@ body { overflow-x: hidden; }
     .navbar .navbar-nav .nav-link { min-height: 40px; padding: 11px 8px; }
     .wrapper { padding-top: 62px !important; }
     .wrapper > .content { padding: 10px 12px calc(82px + env(safe-area-inset-bottom)); }
-    .user-wrapper > .content { padding: 0 0 calc(82px + env(safe-area-inset-bottom)); }
+    .user-wrapper > .content { padding: 10px 12px calc(82px + env(safe-area-inset-bottom)); }
 
     .leftbar, .rightbar, #userPanelSideBar {
         position: fixed !important;
@@ -1934,6 +1936,13 @@ body.auth-screen .login-section.auth-page { padding-top: 24px; }
         box-shadow: -12px 0 14px var(--sb-canvas), -1px 0 var(--sb-line);
         isolation: isolate;
     }
+    .wallet-page {
+        width: 100%;
+        max-width: 100%;
+        margin-inline: 0;
+    }
+    .wallet-page > [class*="col-"] { min-width: 0; }
+    .wallet-page .wallet-operation-help { overflow-wrap: anywhere; }
 }
 @media (min-width: 992px) {
     .navbar .navbar-toggler { display: none !important; }
