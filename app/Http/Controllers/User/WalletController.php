@@ -60,14 +60,35 @@ class WalletController extends Controller
 
     public function updateCurrency(Request $request)
     {
-        $request->validate([
-            'wallet_currency' => 'required|string|size:3',
+        $request->merge([
+            'wallet_currency' => strtoupper(trim((string)$request->input('wallet_currency', ''))),
         ]);
+
+        $supportedCurrencies = array_keys($this->currencies->supportedCurrencies());
+        $validator = Validator::make($request->all(), [
+            'wallet_currency' => ['required', 'string', 'size:3', 'in:' . implode(',', $supportedCurrencies)],
+        ], [
+            'wallet_currency.required' => 'Choose a wallet currency.',
+            'wallet_currency.size' => 'Choose a valid three-letter currency code.',
+            'wallet_currency.in' => 'That wallet currency is not supported.',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('user.wallet')
+                ->withErrors($validator)
+                ->withInput();
+        }
 
         try {
             $this->currencies->switchWalletCurrency(auth()->user(), $request->wallet_currency);
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            return redirect()->route('user.wallet')
+                ->withErrors($exception->errors())
+                ->withInput();
         } catch (\Throwable $exception) {
-            return back()->withErrors(['wallet_currency' => $exception->getMessage()])->withInput();
+            return redirect()->route('user.wallet')
+                ->withErrors(['wallet_currency' => $exception->getMessage()])
+                ->withInput();
         }
 
         return redirect()->route('user.wallet')->with('success', 'Wallet currency updated. Your balance was converted using USD as the base.');

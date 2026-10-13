@@ -60,6 +60,17 @@
 
                         </div>
 
+                        <div class="alert alert-info" role="note">
+                            <strong>Wallet exchange-rate setup</strong>
+                            <ol class="mb-2 mt-2">
+                                <li>Create a CurrencyLayer account and use a plan licensed for commercial use. The free plan is marked non-commercial by CurrencyLayer.</li>
+                                <li>Copy its access key into the field above, enable automatic updates, and select a refresh schedule. USD is the conversion base for wallet balances.</li>
+                                <li>Save this page, then run <code>php artisan wallet:rates:update</code> once from the application directory to load the first rates.</li>
+                                <li>For scheduled updates, configure the hosting cron to run <code>php artisan schedule:run</code> every minute.</li>
+                            </ol>
+                            <small>CurrencyLayer plan features and terms: <a href="https://currencylayer.com/product" target="_blank" rel="noopener noreferrer">currencylayer.com/product</a>. API documentation: <a href="https://docs.apilayer.com/currencylayer/docs/api-documentation" target="_blank" rel="noopener noreferrer">CurrencyLayer API docs</a>.</small>
+                        </div>
+
                         <div class="row align-items-center justify-content-between mb-3">
                             <div class="col-md-6">
                                 <h5 class="card-title  font-weight-bold color-primary">@lang('CoinMarketCap Api Config (Crypto Currency)')</h5>

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\WalletWebhookController;
 use App\Http\Controllers\Admin\WalletProviderController;
+use App\Http\Controllers\User\WalletController;
 use App\Models\PaymentProviderSetting;
 use App\Models\Transaction;
 use App\Models\User;
@@ -263,6 +264,66 @@ class WalletProviderSafetyTest extends TestCase
         $routeOptions = $view->getData()['routeOptions'];
         $this->assertSame(['payhero'], $routeOptions['KES']['deposit']);
         $this->assertSame(['makamesco'], $routeOptions['KES']['withdrawal']);
+    }
+
+    public function test_invalid_wallet_currency_shows_a_specific_field_error()
+    {
+        $user = $this->createUser(10, 'USD');
+        $this->actingAs($user);
+
+        $response = app(WalletController::class)->updateCurrency(
+            Request::create('/user/wallet/currency', 'POST', ['wallet_currency' => 'ZZZ'])
+        );
+
+        $this->assertSame(route('user.wallet'), $response->getTargetUrl());
+        $errors = $response->getSession()->get('errors');
+        $this->assertSame('That wallet currency is not supported.', $errors->first('wallet_currency'));
+    }
+
+    public function test_kes_withdrawal_is_sent_to_makamesco_b2c_and_kept_pending_for_confirmation()
+    {
+        $user = $this->createUser(100, 'KES');
+        $this->actingAs($user);
+        $this->saveProviderSettings('makamesco', ['api_key' => 'makamesco-test-key']);
+
+        Http::fake([
+            'https://makamescopay.com/api/payments/b2c' => Http::response([
+                'status' => 'pending',
+                'conversationId' => 'makamesco-b2c-001',
+                'feeAmount' => 8,
+                'totalDeducted' => 58,
+            ], 200),
+        ]);
+
+        $request = Request::create('/user/wallet/withdraw', 'POST', [
+            'amount' => 50,
+            'account_name' => 'Test Wallet User',
+            'account_number' => '0712345678',
+            'method' => 'mpesa',
+        ]);
+        $response = app(WalletController::class)->withdraw($request);
+
+        $entry = WalletProviderTransaction::where('user_id', $user->id)
+            ->where('direction', 'withdrawal')
+            ->firstOrFail();
+
+        $this->assertSame('makamesco', $entry->provider);
+        $this->assertSame('KES', $entry->currency_code);
+        $this->assertSame('processing', $entry->status);
+        $this->assertSame('makamesco-b2c-001', $entry->provider_reference);
+        $this->assertEquals(50, (float)$user->fresh()->balance);
+        $this->assertSame(route('user.wallet', ['reference' => $entry->reference]), $response->getTargetUrl());
+
+        Http::assertSent(function ($sent) {
+            $data = $sent->data();
+            return $sent->method() === 'POST'
+                && $sent->url() === 'https://makamescopay.com/api/payments/b2c'
+                && in_array('makamesco-test-key', $sent->header('X-API-Key'), true)
+                && ($data['phoneNumber'] ?? null) === '254712345678'
+                && (float)($data['amount'] ?? 0) === 50.0
+                && ($data['commandId'] ?? null) === 'BusinessPayment';
+        });
+        Http::assertSentCount(1);
     }
 
     public function test_paystack_webhook_requires_a_valid_signature_and_credits_a_verified_charge_only_once()

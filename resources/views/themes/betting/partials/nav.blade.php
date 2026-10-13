@@ -40,6 +40,7 @@
 
 
             @auth
+                @include($theme.'partials.wallet-currency-switch')
                 <div class="dropdown user-dropdown d-inline-block">
                     <button class="dropdown-toggle">
                         <i class="fal fa-user"></i>
