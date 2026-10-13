@@ -166,6 +166,7 @@
         }
     ?>
 
+    <script src="<?php echo e(asset('assets/themes/betting/js/match-feed-filters.js')); ?>?v=<?php echo e(filemtime(public_path('assets/themes/betting/js/match-feed-filters.js'))); ?>"></script>
     <script>
         let getMatchList = new Vue({
             el: "#getMatchList",
@@ -461,47 +462,14 @@
                     });
                 },
                 visibleMatches(items) {
-                    var matches = Array.isArray(items) ? items : [];
-                    var today = new Date().toDateString();
-                    var _this = this;
-
-                    return matches.filter(function (match) {
-                        if (_this.dateFilter == 'today') {
-                            var startDate = new Date(match.start_date);
-                            if (isNaN(startDate.getTime()) || startDate.toDateString() !== today) {
-                                return false;
-                            }
-                        }
-
-                        var questions = Array.isArray(match.questions) ? match.questions : [];
-                        var hasOdds = questions.some(function (question) {
-                            return Array.isArray(question.options) && question.options.length > 0;
-                        });
-                        if (_this.marketGroupFilter == 'highlights' && !hasOdds) {
-                            return false;
-                        }
-                        if (_this.onlyAvailableOdds) {
-                            var hasUnlockedOdds = questions.some(function (question) {
-                                return (question.options || []).some(function (option) {
-                                    return option.is_unlock_question != 1 && option.is_unlock_match != 1;
-                                });
-                            });
-                            if (!hasUnlockedOdds) {
-                                return false;
-                            }
-                        }
-                        return true;
+                    return MatchFeedFilters.filterMatches(items, {
+                        dateFilter: this.dateFilter,
+                        marketGroupFilter: this.marketGroupFilter,
+                        onlyAvailableOdds: this.onlyAvailableOdds
                     });
                 },
                 visibleQuestions(items) {
-                    var questions = Array.isArray(items) ? items : [];
-                    if (this.oddsMarketFilter == '1x2') {
-                        var matchResult = questions.find(function (question) {
-                            return /1\\s*x\\s*2|match\\s*(winner|result)|full\\s*time\\s*result/i.test(question.name || '');
-                        });
-                        return matchResult ? [matchResult] : questions.slice(0, 1);
-                    }
-                    return questions.slice(0, 3);
+                    return MatchFeedFilters.selectQuestions(items, this.oddsMarketFilter);
                 },
                 slicedArray(items) {
                     return this.visibleQuestions(items)[0] || { options: [] };
