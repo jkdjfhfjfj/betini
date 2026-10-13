@@ -194,118 +194,72 @@
     </table>
 </div>
 
-<div class="live-matches d-sm-none" v-if="showType == 'live'">
-    <h5>@lang('Live Matches')</h5>
-    <div class="live-matches-slider owl-carousel">
-        <div class="box" v-for="(item, index) in allSports_filter">
-            <h5 class="mb-3">@{{ item.game_tournament.name }}</h5>
-            <div
-                class="row d-flex justify-content-around align-items-center">
-                <div class="col-3 team">
-                    <img
-                        class="img-fluid"
-                        :src="item.team1_img"
-                        alt="..."
-                    />
-                    <p>@{{ item.team1}}</p>
-                </div>
-                <div class="col-6">
-                    <span>@{{item.name}} </span>
-                    <h5 v-if="0 < item.questions.length ">@{{ slicedArray(item.questions).name}}</h5>
-                    <button class="btn-custom w-75 my-2" @click="goMatch(item)">@lang('See More')</button>
-                </div>
-                <div class="col-3 team">
-                    <img
-                        class="img-fluid"
-                        :src="item.team2_img"
-                        alt="..."
-                    />
-                    <p>@{{ item.team2}}</p>
-                </div>
-
-                <div class="col-12 align-self-end">
-
-                    <div v-if="0 < item.questions.length" class="d-flex justify-content-between">
-                        <button class="btn-light" type="button"
-                                :class="{ disabled: (option.is_unlock_question == 1 || option.is_unlock_match == 1) }"
-                                :disabled="option.is_unlock_question == 1 || option.is_unlock_match == 1 "
-                                :title="option.option_name"
-                                @click="addToSlip(option)"
-                                v-for="(option, index) in (slicedArray(item.questions).options)">
-
-                            <i v-if="option.is_unlock_question == 1 || option.is_unlock_match == 1"
-                               class="fas fa-lock-alt"></i>
-                            @{{ option.ratio }}
-                        </button>
-
-                    </div>
-
-                    <div v-else class="d-flex justify-content-between">
-                        <button type="button" disabled class="btn-light disabled downgrade-mobile">-</button>
-                        <button type="button" disabled class="btn-light disabled downgrade-mobile">-</button>
-                        <button type="button" disabled class="btn-light disabled downgrade-mobile">-</button>
-                    </div>
-                </div>
+<div class="match-feed-mobile" v-if="showType == 'live'">
+    <article class="match-card" v-for="(item, index) in allSports_filter" :key="'live-mobile-' + item.id">
+        <div class="match-card-meta">
+            <span class="match-card-league"><span v-html="item.game_category.icon"></span> @{{ item.game_tournament.name }}<span v-if="item.name"> · @{{ item.name }}</span></span>
+            <span class="match-card-time">@lang('Live')</span>
+        </div>
+        <div class="match-card-body">
+            <div class="match-card-teams">
+                <div class="match-card-team"><img :src="item.team1_img" alt=""><span>@{{ item.team1 }}</span></div>
+                <div class="match-card-team"><img :src="item.team2_img" alt=""><span>@{{ item.team2 }}</span></div>
+            </div>
+            <div class="match-card-odds" v-if="item.questions.length && slicedArray(item.questions).options.length">
+                <button v-for="(option, optionIndex) in slicedArray(item.questions).options"
+                        :key="'live-odd-' + option.id"
+                        type="button"
+                        :disabled="option.is_unlock_question == 1 || option.is_unlock_match == 1"
+                        :title="option.option_name"
+                        :aria-label="option.option_name + ' @ ' + option.ratio"
+                        @click="addToSlip(option)">
+                    <i v-if="option.is_unlock_question == 1 || option.is_unlock_match == 1" class="fas fa-lock-alt" aria-hidden="true"></i>
+                    @{{ option.ratio }}
+                </button>
+            </div>
+            <div class="match-card-odds" v-else>
+                <button type="button" disabled aria-label="@lang('Odds unavailable')">-</button>
+                <button type="button" disabled aria-label="@lang('Odds unavailable')">-</button>
             </div>
         </div>
-    </div>
+        <div class="match-card-more" v-if="item.questions.length">
+            <button type="button" @click="goMatch(item)">+@{{ item.questions.length }} @lang('Markets')</button>
+        </div>
+    </article>
+    <div class="feed-empty" v-if="allSports_filter.length == 0">@lang('No live matches available')</div>
 </div>
 
-
-
-<div class="live-matches d-sm-none" v-if="showType == 'upcoming'">
-    <h5>@lang('Upcoming Matches')</h5>
-    <div class="live-matches-slider owl-carousel">
-        <div class="box" v-for="(item, index) in upcoming_filter">
-            <h5 class="mb-3">@{{ item.game_tournament.name }}</h5>
-            <div
-                class="row d-flex justify-content-around align-items-center">
-                <div class="col-3 team">
-                    <img
-                        class="img-fluid"
-                        :src="item.team1_img"
-                        alt="..."
-                    />
-                    <p>@{{ item.team1}}</p>
-                </div>
-                <div class="col-6">
-                    <span>@{{item.name}} </span>
-                    <h5 v-if="0 < item.questions.length ">@{{ slicedArray(item.questions).name}}</h5>
-                    <button class="btn-custom w-75 my-2" @click="goMatch(item)">@lang('See More')</button>
-                </div>
-                <div class="col-3 team">
-                    <img
-                        class="img-fluid"
-                        :src="item.team2_img"
-                        alt="..."
-                    />
-                    <p>@{{ item.team2}}</p>
-                </div>
-
-                <div class="col-12 align-self-end">
-
-                    <div v-if="0 < item.questions.length" class="d-flex justify-content-between">
-                        <button class="btn-light" type="button"
-                                :class="{ disabled: (option.is_unlock_question == 1 || option.is_unlock_match == 1) }"
-                                :disabled="option.is_unlock_question == 1 || option.is_unlock_match == 1 "
-                                :title="option.option_name"
-                                @click="addToSlip(option)"
-                                v-for="(option, index) in (slicedArray(item.questions).options)">
-
-                            <i v-if="option.is_unlock_question == 1 || option.is_unlock_match == 1"
-                               class="fas fa-lock-alt"></i>
-                            @{{ option.ratio }}
-                        </button>
-
-                    </div>
-
-                    <div v-else class="d-flex justify-content-between">
-                        <button type="button" disabled class="btn-light disabled downgrade-mobile">-</button>
-                        <button type="button" disabled class="btn-light disabled downgrade-mobile">-</button>
-                        <button type="button" disabled class="btn-light disabled downgrade-mobile">-</button>
-                    </div>
-                </div>
+<div class="match-feed-mobile" v-if="showType == 'upcoming'">
+    <article class="match-card" v-for="(item, index) in upcoming_filter" :key="'upcoming-mobile-' + item.id">
+        <div class="match-card-meta">
+            <span class="match-card-league"><span v-html="item.game_category.icon"></span> @{{ item.game_tournament.name }}<span v-if="item.name"> · @{{ item.name }}</span></span>
+            <span class="match-card-time">@lang('Upcoming')</span>
+        </div>
+        <div class="match-card-body">
+            <div class="match-card-teams">
+                <div class="match-card-team"><img :src="item.team1_img" alt=""><span>@{{ item.team1 }}</span></div>
+                <div class="match-card-team"><img :src="item.team2_img" alt=""><span>@{{ item.team2 }}</span></div>
+            </div>
+            <div class="match-card-odds" v-if="item.questions.length && slicedArray(item.questions).options.length">
+                <button v-for="(option, optionIndex) in slicedArray(item.questions).options"
+                        :key="'upcoming-odd-' + option.id"
+                        type="button"
+                        :disabled="option.is_unlock_question == 1 || option.is_unlock_match == 1"
+                        :title="option.option_name"
+                        :aria-label="option.option_name + ' @ ' + option.ratio"
+                        @click="addToSlip(option)">
+                    <i v-if="option.is_unlock_question == 1 || option.is_unlock_match == 1" class="fas fa-lock-alt" aria-hidden="true"></i>
+                    @{{ option.ratio }}
+                </button>
+            </div>
+            <div class="match-card-odds" v-else>
+                <button type="button" disabled aria-label="@lang('Odds unavailable')">-</button>
+                <button type="button" disabled aria-label="@lang('Odds unavailable')">-</button>
             </div>
         </div>
-    </div>
+        <div class="match-card-more" v-if="item.questions.length">
+            <button type="button" @click="goMatch(item)">+@{{ item.questions.length }} @lang('Markets')</button>
+        </div>
+    </article>
+    <div class="feed-empty" v-if="upcoming_filter.length == 0">@lang('No upcoming matches available')</div>
 </div>

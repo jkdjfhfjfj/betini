@@ -36,8 +36,15 @@
 
         <!-- contents -->
         <div class="content">
-            @include($theme.'partials.home.slider')
             @include($theme.'partials.home.navbar')
+            <div class="match-feed-controls">
+                <h1 class="feed-title">@if(Request::routeIs('match')) @lang('Match markets') @else @lang('Matches') @endif</h1>
+                <div class="feed-switch" role="group" aria-label="@lang('Match timing')">
+                    <button type="button" @click="liveUpComing('live')" :class="{active: showType == 'live'}" :aria-pressed="showType == 'live'">@lang('Live')</button>
+                    <button type="button" @click="liveUpComing('upcoming')" :class="{active: showType == 'upcoming'}" :aria-pressed="showType == 'upcoming'">@lang('Upcoming')</button>
+                </div>
+            </div>
+            @include($theme.'partials.home.slider')
             @if(Request::routeIs('match'))
                 @include($theme.'partials.home.match')
             @else

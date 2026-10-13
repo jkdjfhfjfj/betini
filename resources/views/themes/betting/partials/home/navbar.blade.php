@@ -17,4 +17,11 @@
     </a>
     @empty
     @endforelse
+
+    <button type="button" class="category-more"
+            aria-label="@lang('More sports')"
+            onclick="toggleSidebar('leftbar')">
+        <i class="fal fa-ellipsis-h" aria-hidden="true"></i>
+        <span>@lang('More')</span>
+    </button>
 </div>

@@ -34,11 +34,6 @@
             </ul>
         </div>
         <div class="navbar-text">
-            <button onclick="darkMode()" class="btn-custom light night-mode">
-                <i class="fal fa-moon"></i>
-            </button>
-
-
             @auth
                 @include($theme.'partials.wallet-currency-switch')
                 <div class="dropdown user-dropdown d-inline-block">
@@ -154,31 +149,39 @@
 @if(in_array(Request::route()->getName(),['home','category','tournament','match']))
 
     <div class="bottom-bar fixed-bottom text-center">
-        <a href="{{route('home')}}" class="text-dark">
+        <a href="{{ route('home') }}" class="text-dark">
             <i class="fa fa-home"></i>
-            @lang('Home')
+            <span class="nav-label">@lang('Home')</span>
         </a>
-        <a href="javascript:void(0)" class="text-dark" onclick="toggleSidebar('leftbar')">
-            <i class="far fa-globe-americas"></i>
-            @lang('Sports')
+        <a href="{{ route('home') }}" class="text-dark"
+           onclick="localStorage.setItem('showType', 'live')">
+            <i class="las la-podcast"></i>
+            <span class="nav-label">@lang('Live')</span>
         </a>
 
-        <a href="javascript:void(0)" class="text-dark" onclick="toggleSidebar('rightbar')">
+        <a href="javascript:void(0)" class="text-dark bet-slip-link"
+           aria-label="@lang('Bet Slip')" onclick="toggleSidebar('rightbar')">
             <i class="fal fa-ticket-alt"></i>
-            @lang('Bet Slip')
+            <span class="nav-label">@lang('Bet Slip')</span>
         </a>
-
-        @guest
-            <a href="{{route('login')}}" class="text-dark">
-                <i class="fa fa-sign-in"></i>
-                @lang('Login')
-            </a>
-        @endguest
 
         @auth
-            <a href="{{route('user.home')}}" class="text-dark">
+            <a href="{{ route('user.betHistory') }}" class="text-dark">
+                <i class="fal fa-receipt"></i>
+                <span class="nav-label">@lang('My Bets')</span>
+            </a>
+            <a href="{{ route('user.profile') }}" class="text-dark">
                 <i class="fal fa-user"></i>
-                @lang('Dashboard')
+                <span class="nav-label">@lang('Profile')</span>
+            </a>
+        @else
+            <a href="{{ route('login') }}" class="text-dark">
+                <i class="fal fa-receipt"></i>
+                <span class="nav-label">@lang('My Bets')</span>
+            </a>
+            <a href="{{ route('login') }}" class="text-dark">
+                <i class="fal fa-user"></i>
+                <span class="nav-label">@lang('Profile')</span>
             </a>
         @endauth
 

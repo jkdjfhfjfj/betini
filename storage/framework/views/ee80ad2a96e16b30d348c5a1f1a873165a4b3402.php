@@ -10,6 +10,7 @@
     <link rel="stylesheet" type="text/css" href="<?php echo e(asset($themeTrue . 'css/bootstrap.min.css')); ?>"/>
     <!-- custom css -->
     <link rel="stylesheet" type="text/css" href="<?php echo e(asset($themeTrue . 'css/style.css')); ?>"/>
+    <link rel="stylesheet" type="text/css" href="<?php echo e(asset($themeTrue . 'css/sportsbook.css')); ?>"/>
 </head>
 <body <?php if(session()->get('dark-mode') == 'true'): ?> class="dark-mode"  <?php endif; ?>>
     <?php echo $__env->yieldContent('content'); ?>

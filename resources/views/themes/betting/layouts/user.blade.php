@@ -20,6 +20,7 @@
 
     <script src="{{ asset('assets/admin/js/fontawesome/fontawesomepro.js') }}"></script>
     <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/style.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/sportsbook.css') }}"/>
 
     @stack('style')
 
