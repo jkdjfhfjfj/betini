@@ -71,7 +71,7 @@
                     </form>
                     @if(!$rateAvailable)
                         <div class="alert alert-warning mt-3 mb-0">
-                            No current USD exchange rate is stored for {{ $currency }}. Native-currency deposits and withdrawals still work, but betting and balance conversion require an administrator to configure CurrencyAPI and update rates.
+                            No current USD exchange rate is stored for {{ $currency }}. Native-currency deposits and withdrawals still work, but betting and balance conversion require an administrator to configure CurrencyLayer and update rates.
                         </div>
                     @endif
                 </div>

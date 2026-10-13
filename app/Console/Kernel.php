@@ -44,7 +44,7 @@ class Kernel extends ConsoleKernel
             $schedule->command('payout-currency:update')
                 ->{basicControl()->currency_layer_auto_update_at}();
         }
-        // CurrencyAPI's free plan updates rates daily; avoid repeatedly spending API quota.
+        // CurrencyLayer rates refresh daily; avoid repeatedly spending API quota.
         $schedule->command('wallet:rates:update')->dailyAt('01:10');
         if ($basicControl->coin_market_cap_auto_update == 1) {
             $schedule->command('payout-crypto-currency:update')->{basicControl()->coin_market_cap_auto_update_at}();

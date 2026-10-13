@@ -16,44 +16,46 @@ class WalletCurrencyRateUpdate extends Command
 
     public function handle()
     {
-        $settings = PaymentProviderSetting::forProvider('currencyapi')->settings;
-        $accessKey = $settings['api_key'] ?? null;
+        $settings = PaymentProviderSetting::forProvider('currencylayer')->settings;
+        $accessKey = $settings['access_key'] ?? null;
         if (!$accessKey) {
-            $this->info('CurrencyAPI key is not configured; wallet rate update skipped.');
+            $this->info('CurrencyLayer access key is not configured; wallet rate update skipped.');
             return 0;
         }
 
         $currencies = array_diff(array_keys(config('currencies.supported', [])), ['USD']);
         try {
             $response = Http::acceptJson()
-                ->withHeaders(['apikey' => $accessKey])
                 ->timeout(20)
-                ->get('https://api.currencyapi.com/v3/latest', [
-                'base_currency' => 'USD',
-                'currencies' => implode(',', $currencies),
-            ]);
+                ->get('https://api.currencylayer.com/live', [
+                    'access_key' => $accessKey,
+                    'source' => 'USD',
+                    'currencies' => implode(',', $currencies),
+                ]);
         } catch (\Throwable $exception) {
-            $this->error('Could not reach CurrencyAPI over HTTPS. Check connectivity and the account plan.');
+            $this->error('Could not reach CurrencyLayer over HTTPS. Check connectivity and the account plan.');
             return 1;
         }
 
         if (!$response->successful()) {
-            $this->error('CurrencyAPI request failed with HTTP ' . $response->status() . '. Check the API key and account plan.');
+            $this->error('CurrencyLayer request failed with HTTP ' . $response->status() . '. Check the access key and account plan.');
             return 1;
         }
 
         $payload = $response->json();
-        if (!is_array($payload) || !is_array($payload['data'] ?? null)) {
-            $this->error('CurrencyAPI did not return usable USD-based rates. Check the API key and account plan.');
+        if (!is_array($payload) || empty($payload['success']) || !is_array($payload['quotes'] ?? null)) {
+            $this->error('CurrencyLayer did not return usable USD-based rates. Check the access key and account plan.');
             return 1;
         }
 
-        $updatedAt = data_get($payload, 'meta.last_updated_at');
-        $timestamp = $updatedAt ? \Carbon\Carbon::parse($updatedAt) : now();
+        $updatedAt = data_get($payload, 'timestamp');
+        $timestamp = is_numeric($updatedAt)
+            ? \Carbon\Carbon::createFromTimestampUTC((int)$updatedAt)
+            : now();
         $updated = [];
         $missing = [];
         foreach ($currencies as $currency) {
-            $quote = data_get($payload, 'data.' . $currency . '.value');
+            $quote = data_get($payload, 'quotes.USD' . $currency);
             if (!is_numeric($quote) || (float)$quote <= 0) {
                 $missing[] = $currency;
                 continue;
@@ -71,14 +73,14 @@ class WalletCurrencyRateUpdate extends Command
             foreach ($updated as $currency => $rate) {
                 CurrencyRate::updateOrCreate(
                     ['currency_code' => $currency],
-                    ['usd_to_currency' => $rate, 'source' => 'currencyapi', 'fetched_at' => $timestamp]
+                    ['usd_to_currency' => $rate, 'source' => 'currencylayer', 'fetched_at' => $timestamp]
                 );
             }
         });
 
         $this->info('Updated ' . count($updated) . ' USD-based wallet rates.');
         if ($missing) {
-            $this->warn('No rates were returned for: ' . implode(', ', $missing) . '. Wallet conversion for those currencies remains unavailable.');
+            $this->warn('CurrencyLayer returned no rates for: ' . implode(', ', $missing) . '. Wallet conversion for those currencies remains unavailable.');
             return 1;
         }
 
