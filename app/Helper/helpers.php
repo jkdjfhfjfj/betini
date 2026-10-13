@@ -68,11 +68,11 @@ function getFile($image, $clean = '')
 
             // These fixed-name admin images can be replaced with files of the same size
             // during the same second; a content hash guarantees a new public URL.
-            $normalizedImage = ltrim(str_replace('\\', '/', $image), '/');
-            if (in_array($normalizedImage, [
-                'assets/uploads/logo/banner.jpg',
-                'assets/uploads/logo/footer.jpg',
-                'assets/uploads/logo/loginImage.png',
+            $fixedImageName = strtolower(basename(str_replace('\\', '/', $image)));
+            if (in_array($fixedImageName, [
+                'banner.jpg',
+                'footer.jpg',
+                'loginimage.png',
             ], true)) {
                 $contentHash = @hash_file('sha256', $filePath);
                 if ($contentHash !== false) {

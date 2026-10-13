@@ -16,8 +16,38 @@ permissions:
   contents: read
 
 jobs:
+  image-upload-regression:
+    name: Check image upload and cache behavior
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: gd, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run image upload regression tests
+        env:
+          APP_ENV: testing
+          APP_DEBUG: false
+          APP_CONFIG_CACHE: /tmp/image-upload-config.php
+          CACHE_DRIVER: array
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          DATABASE_URL: ''
+          SESSION_DRIVER: array
+        run: php vendor/bin/phpunit --no-coverage --do-not-cache-result tests/Unit/ImageUploadRegressionTest.php
+
   deploy:
     name: Sync site to /site1
+    needs: image-upload-regression
     runs-on: ubuntu-latest
     steps:
       - name: Check out the pushed revision
