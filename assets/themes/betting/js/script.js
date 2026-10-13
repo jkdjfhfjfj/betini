@@ -82,21 +82,115 @@ document.addEventListener("keydown", (event) => {
     if (rightbar && rightbar.classList.contains("active")) window.removeClass("rightbar");
 });
 
+// Admin-managed home promotions: touch-scrollable, keyboard-accessible slides.
+document.querySelectorAll("[data-home-promo-carousel]").forEach((carousel) => {
+    const track = carousel.querySelector("[data-home-promo-track]");
+    const slides = Array.from(carousel.querySelectorAll(".home-promo-slide"));
+    const dots = Array.from(carousel.querySelectorAll("[data-promo-slide]"));
+    const previous = carousel.querySelector("[data-promo-previous]");
+    const next = carousel.querySelector("[data-promo-next]");
+
+    if (!track || slides.length < 2) return;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let activeIndex = 0;
+    let timer = null;
+    let scrollFrame = null;
+    let paused = prefersReducedMotion;
+
+    const updateControls = () => {
+        dots.forEach((dot, index) => {
+            const active = index === activeIndex;
+            dot.classList.toggle("is-active", active);
+            dot.setAttribute("aria-current", active ? "true" : "false");
+        });
+    };
+
+    const goTo = (index) => {
+        activeIndex = (index + slides.length) % slides.length;
+        track.scrollTo({
+            left: slides[activeIndex].offsetLeft,
+            behavior: prefersReducedMotion ? "auto" : "smooth",
+        });
+        updateControls();
+    };
+
+    const stopTimer = () => {
+        if (timer) window.clearInterval(timer);
+        timer = null;
+    };
+
+    const startTimer = () => {
+        stopTimer();
+        if (paused || prefersReducedMotion || document.hidden) return;
+        timer = window.setInterval(() => goTo(activeIndex + 1), 5500);
+    };
+
+    if (previous) previous.addEventListener("click", () => {
+        goTo(activeIndex - 1);
+        startTimer();
+    });
+    if (next) next.addEventListener("click", () => {
+        goTo(activeIndex + 1);
+        startTimer();
+    });
+    dots.forEach((dot) => dot.addEventListener("click", () => {
+        goTo(Number(dot.dataset.promoSlide));
+        startTimer();
+    }));
+
+    track.addEventListener("scroll", () => {
+        if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
+        scrollFrame = window.requestAnimationFrame(() => {
+            const trackLeft = track.getBoundingClientRect().left;
+            let closestIndex = 0;
+            let closestDistance = Infinity;
+
+            slides.forEach((slide, index) => {
+                const distance = Math.abs(slide.getBoundingClientRect().left - trackLeft);
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestIndex = index;
+                }
+            });
+
+            activeIndex = closestIndex;
+            updateControls();
+        });
+    }, { passive: true });
+
+    carousel.addEventListener("pointerenter", () => {
+        paused = true;
+        stopTimer();
+    });
+    carousel.addEventListener("pointerleave", () => {
+        paused = false;
+        startTimer();
+    });
+    carousel.addEventListener("focusin", () => {
+        paused = true;
+        stopTimer();
+    });
+    carousel.addEventListener("focusout", (event) => {
+        if (!carousel.contains(event.relatedTarget)) {
+            paused = false;
+            startTimer();
+        }
+    });
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) stopTimer();
+        else startTimer();
+    });
+
+    startTimer();
+});
+
 // // dark mode
 // const darkMode = () => {
 //     document.body.classList.toggle("dark-mode");
 // };
 
 $(document).ready(function () {
-    // SKITTER SLIDER
-    $(function () {
-        $(".skitter-large").skitter({
-            dots: false,
-            interval: 3000,
-            stop_over: false,
-        });
-    });
-
     // owl carousel
     $(".testimonials").owlCarousel({
         loop: true,

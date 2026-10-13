@@ -22,22 +22,44 @@
     <script src="{{ asset('assets/admin/js/fontawesome/fontawesomepro.js') }}"></script>
 
     <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/style.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/sportsbook.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/sportsbook.css') }}?v={{ filemtime(base_path($themeTrue . 'css/sportsbook.css')) }}"/>
 
 
     @stack('style')
 
 </head>
 
-<body @if(session()->get('dark-mode') == 'true') class="dark-mode" @endif>
+@php
+    $isAuthScreen = request()->routeIs(
+        'login',
+        'register',
+        'register.sponsor',
+        'password.*',
+        'verification.*',
+        'confirm-password',
+        'user.check'
+    ) || request()->is(
+        'user',
+        'register/*',
+        'forgot-password',
+        'reset-password*',
+        'verify-email*',
+        'confirm-password',
+        'user/check'
+    );
+@endphp
+
+<body class="@if($isAuthScreen) auth-screen @endif @if(session()->get('dark-mode') == 'true') dark-mode @endif">
 
 
-@include($theme.'partials.nav')
-@include($theme.'partials.banner')
+@if(!$isAuthScreen)
+    @include($theme.'partials.nav')
+    @include($theme.'partials.banner')
+@endif
 
 @yield('content')
 
-@if(!in_array(Request::route()->getName(), ['home','category','tournament','match','login','register','register.sponsor','user.check','password.request']))
+@if(!$isAuthScreen && !in_array(Request::route()->getName(), ['home','category','tournament','match']))
     @include($theme.'partials.footer')
 @endif
 
@@ -45,7 +67,9 @@
 
 @stack('extra-content')
 
-@include($theme.'partials.modal-form')
+@if(!$isAuthScreen)
+    @include($theme.'partials.modal-form')
+@endif
 
 <script src="{{ asset($themeTrue . 'js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset($themeTrue . 'js/masonry.pkgd.min.js') }}"></script>
@@ -62,7 +86,7 @@
 <script src="{{ asset($themeTrue . 'js/jquery.counterup.min.js') }}"></script>
 <script src="{{ asset($themeTrue . 'js/aos.js') }}"></script>
 <script src="{{ asset($themeTrue . 'js/jquery.fancybox.min.js') }}"></script>
-<script src="{{ asset($themeTrue . 'js/script.js') }}"></script>
+<script src="{{ asset($themeTrue . 'js/script.js') }}?v={{ filemtime(base_path($themeTrue . 'js/script.js')) }}"></script>
 
 
 <script src="{{asset('assets/global/js/pusher.min.js')}}"></script>

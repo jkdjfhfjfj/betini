@@ -59,7 +59,10 @@
                             aria-label="@lang('Open account menu')"
                             aria-haspopup="true"
                             aria-expanded="false">
-                        <i class="material-icons-round header-account-icon" aria-hidden="true">person</i>
+                        <svg class="header-account-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="8" r="3.4"></circle>
+                            <path d="M5.2 20c.6-3.8 3.1-5.8 6.8-5.8s6.2 2 6.8 5.8"></path>
+                        </svg>
                     </button>
                     <ul class="dropdown-menu">
                         <li>
@@ -115,7 +118,10 @@
             @endauth
             @guest
                 <a href="{{ route('login') }}" class="header-account-link" aria-label="@lang('Sign in')">
-                    <i class="material-icons-round header-account-icon" aria-hidden="true">person</i>
+                    <svg class="header-account-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="8" r="3.4"></circle>
+                        <path d="M5.2 20c.6-3.8 3.1-5.8 6.8-5.8s6.2 2 6.8 5.8"></path>
+                    </svg>
                 </a>
             @endguest
 
@@ -174,39 +180,57 @@
 
 @if(in_array(Request::route()->getName(),['home','category','tournament','match']) || Request::routeIs('user.*'))
 
-    <div class="bottom-bar fixed-bottom text-center">
+    <nav class="bottom-bar fixed-bottom text-center" aria-label="@lang('Primary mobile navigation')">
         <a href="{{ route('home') }}" class="text-dark {{ Request::routeIs('home','category','tournament','match') ? 'active' : '' }}" @if(Request::routeIs('home','category','tournament','match')) aria-current="page" @endif>
-            <i class="material-icons-round nav-icon" aria-hidden="true">home</i>
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m3.5 10.5 8.5-7 8.5 7M5.5 9v11h13V9M9.5 20v-6h5v6"></path>
+            </svg>
             <span class="nav-label">@lang('Home')</span>
         </a>
         <a href="{{ route('home') }}" class="text-dark"
-           onclick="localStorage.setItem('showType', 'live')">
-            <i class="material-icons-round nav-icon" aria-hidden="true">sensors</i>
+           onclick="localStorage.setItem('showType', 'live')"
+           aria-label="@lang('Live matches')">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="2"></circle>
+                <path d="M7.8 7.8a6 6 0 0 0 0 8.4m8.4-8.4a6 6 0 0 1 0 8.4M4.8 4.8a10.2 10.2 0 0 0 0 14.4m14.4-14.4a10.2 10.2 0 0 1 0 14.4"></path>
+            </svg>
             <span class="nav-label">@lang('Live')</span>
         </a>
 
         <a href="{{ route('home', ['panel' => 'betslip']) }}" class="text-dark bet-slip-link"
            aria-label="@lang('Open bet slip')" aria-controls="rightbar" aria-expanded="false"
            onclick="if (window.openSidebar && window.openSidebar('rightbar')) return false;">
-            <i class="material-icons-round nav-icon" aria-hidden="true">confirmation_number</i>
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6.5h16v3a2.5 2.5 0 0 0 0 5v3H4v-3a2.5 2.5 0 0 0 0-5z"></path>
+                <path d="M12 8.5v1.8m0 1.8v1.8"></path>
+            </svg>
             <span class="nav-label">@lang('Bet Slip')</span>
         </a>
 
         @auth
             <a href="{{ route('user.betHistory') }}" class="text-dark {{ Request::routeIs('user.betHistory') ? 'active' : '' }}" @if(Request::routeIs('user.betHistory')) aria-current="page" @endif>
-                <i class="material-icons-round nav-icon" aria-hidden="true">receipt_long</i>
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3.5h12v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"></path>
+                    <path d="M9 8h6m-6 3.5h6m-6 3.5h4"></path>
+                </svg>
                 <span class="nav-label">@lang('Bet History')</span>
             </a>
             <a href="{{ route('user.profile') }}" class="text-dark {{ Request::routeIs('user.profile') ? 'active' : '' }}" @if(Request::routeIs('user.profile')) aria-current="page" @endif>
-                <i class="material-icons-round nav-icon" aria-hidden="true">person</i>
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="8" r="3.4"></circle>
+                    <path d="M5.2 20c.6-3.8 3.1-5.8 6.8-5.8s6.2 2 6.8 5.8"></path>
+                </svg>
                 <span class="nav-label">@lang('Profile')</span>
             </a>
         @else
             <a href="{{ route('login') }}" class="text-dark">
-                <i class="material-icons-round nav-icon" aria-hidden="true">person</i>
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="8" r="3.4"></circle>
+                    <path d="M5.2 20c.6-3.8 3.1-5.8 6.8-5.8s6.2 2 6.8 5.8"></path>
+                </svg>
                 <span class="nav-label">@lang('Profile')</span>
             </a>
         @endauth
 
-    </div>
+    </nav>
 @endif

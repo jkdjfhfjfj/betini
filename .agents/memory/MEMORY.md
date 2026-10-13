@@ -1,4 +1,5 @@
 - [GitHub secret-push cleanup](github-secret-push-cleanup.md) — push protection scans commit history; removing a key from current files alone may not unblock a push.
 - [Multi-currency wallet rules](multi-currency-wallet.md) — preserve legacy USD balances and keep KES deposits on PayHero and KES withdrawals on Makamesco B2C.
 - [Isolated Laravel database checks](isolated-laravel-database.md) — local SQLite commands must explicitly clear `DATABASE_URL`, which can override `DB_CONNECTION`.
+- [Tracked Blade view caches](tracked-blade-view-caches.md) — restoring committed compiled views can make them appear newer than edited templates, leaving the preview stale.
 - [PayzaAPI contract](payzaapi-contract.md) — use hosted checkout and signed payment events; reconcile payouts via documented status polling unless Payza confirms another contract.
