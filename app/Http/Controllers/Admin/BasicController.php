@@ -148,6 +148,12 @@ class BasicController extends Controller
 
     public function breadcrumbUpdate(Request $request)
     {
+        $request->validate([
+            'banner' => 'nullable|image|mimes:jpg,jpeg,png|max:8192',
+            'footer' => 'nullable|image|mimes:jpg,jpeg,png|max:8192',
+            'loginImage' => 'nullable|image|mimes:jpg,jpeg,png|max:8192',
+        ]);
+
         if ($request->hasFile('banner')) {
             try {
                 $old = 'banner.jpg';

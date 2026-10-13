@@ -8,7 +8,8 @@
 @section('content')
     <div class="container-fluid">
         <div class="alert alert-info mb-4" role="status">
-            <i class="fas fa-info-circle mr-2"></i> @lang('Uploaded image URLs are versioned automatically so visitors receive the latest image after you save.')
+            <i class="fas fa-info-circle mr-2"></i>
+            @lang('Banner Image is used on inner pages. The homepage carousel is managed separately under Content > Slider. Saved uploads are published from the app folder and refreshed for visitors.')
         </div>
 
 
