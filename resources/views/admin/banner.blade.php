@@ -7,8 +7,8 @@
 
 @section('content')
     <div class="container-fluid">
-        <div class="alert alert-warning mb-4" role="alert">
-            <i class="fas fa-info-circle mr-2"></i> @lang('After changes image. Please clear your browser\'s cache to see changes.')
+        <div class="alert alert-info mb-4" role="status">
+            <i class="fas fa-info-circle mr-2"></i> @lang('Uploaded image URLs are versioned automatically so visitors receive the latest image after you save.')
         </div>
 
 

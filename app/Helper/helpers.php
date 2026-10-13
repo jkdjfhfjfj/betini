@@ -46,7 +46,29 @@ function menuActive($routeName, $type = null)
 
 function getFile($image, $clean = '')
 {
-    return file_exists($image) && is_file($image) ? asset($image) . $clean : asset(config('location.default'));
+    if (!is_string($image) || $image === '') {
+        return asset(config('location.default'));
+    }
+
+    clearstatcache(true, $image);
+
+    if (!file_exists($image) || !is_file($image)) {
+        return asset(config('location.default'));
+    }
+
+    $url = asset($image);
+    if ($clean === '') {
+        $modifiedAt = @filemtime($image);
+        $fileSize = @filesize($image);
+
+        if ($modifiedAt !== false) {
+            $separator = strpos($url, '?') === false ? '?' : '&';
+            $version = $modifiedAt . ($fileSize !== false ? '-' . $fileSize : '');
+            $url .= $separator . 'v=' . rawurlencode($version);
+        }
+    }
+
+    return $url . $clean;
 }
 
 function removeFile($path)
