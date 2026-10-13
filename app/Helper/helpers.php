@@ -307,26 +307,50 @@ function in_array_any($needles, $haystack)
 }
 
 
+function adminAccessList($admin = null)
+{
+    $admin = $admin ?: auth()->guard('admin')->user();
+    if (!$admin) {
+        return collect();
+    }
+
+    $access = $admin->admin_access ?? [];
+    if (is_string($access)) {
+        $decoded = json_decode($access, true);
+        $access = json_last_error() === JSON_ERROR_NONE && is_array($decoded)
+            ? $decoded
+            : explode(',', $access);
+    }
+
+    return collect((array)$access)
+        ->flatten()
+        ->filter(function ($permission) {
+            return is_string($permission) || is_numeric($permission);
+        })
+        ->map(function ($permission) {
+            return trim((string)$permission);
+        })
+        ->filter()
+        ->unique()
+        ->values();
+}
+
 function adminAccessRoute($search)
 {
-    $list = collect(config('role'))->pluck('access')->flatten()->intersect(auth()->guard('admin')->user()->admin_access);
-
-
-    if (is_array($search)) {
-        $list = $list->intersect($search);
-        if (0 < count($list)) {
-            return true;
-        }
-        return false;
-    } else {
-
-        return $list->search(function ($item) use ($search) {
-            if ($search == $item) {
-                return true;
-            }
-            return false;
+    $knownPermissions = collect(config('role'))
+        ->pluck('access')
+        ->flatten()
+        ->filter(function ($permission) {
+            return is_string($permission) && $permission !== '';
         });
-    }
+    $assignedPermissions = adminAccessList()->intersect($knownPermissions);
+    $requestedPermissions = collect((array)$search)
+        ->flatten()
+        ->filter(function ($permission) {
+            return is_string($permission) && $permission !== '';
+        });
+
+    return $assignedPermissions->intersect($requestedPermissions)->isNotEmpty();
 }
 
 function shortName($name, $length = 3)

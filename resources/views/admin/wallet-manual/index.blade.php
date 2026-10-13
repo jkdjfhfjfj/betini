@@ -167,23 +167,27 @@
                         </td>
                         <td style="min-width: 230px;">
                             @if($transaction->provider === 'manual' && in_array($transaction->status, ['pending', 'processing'], true))
-                                <form method="post" action="{{ route('admin.wallet-manual.review', $transaction->id) }}" class="mb-2">
-                                    @csrf
-                                    <input type="hidden" name="action" value="approve">
-                                    @if($transaction->direction === 'withdrawal')
-                                        <input class="form-control form-control-sm mb-2" name="provider_reference" maxlength="191" placeholder="@lang('Payout transfer reference (optional)')">
-                                        <button class="btn btn-sm btn-success" type="submit">@lang('Mark paid')</button>
-                                    @else
-                                        <input class="form-control form-control-sm mb-2" name="provider_reference" maxlength="191" placeholder="@lang('Payment reference (optional)')">
-                                        <button class="btn btn-sm btn-success" type="submit">@lang('Approve deposit')</button>
-                                    @endif
-                                </form>
-                                <form method="post" action="{{ route('admin.wallet-manual.review', $transaction->id) }}">
-                                    @csrf
-                                    <input type="hidden" name="action" value="reject">
-                                    <textarea class="form-control form-control-sm mb-2" name="feedback" rows="2" maxlength="500" placeholder="@lang('Reason for rejection')" required></textarea>
-                                    <button class="btn btn-sm btn-danger" type="submit">@lang('Reject')</button>
-                                </form>
+                                @if(adminAccessRoute(config('role.payment_log.access.edit')))
+                                    <form method="post" action="{{ route('admin.wallet-manual.review', $transaction->id) }}" class="mb-2">
+                                        @csrf
+                                        <input type="hidden" name="action" value="approve">
+                                        @if($transaction->direction === 'withdrawal')
+                                            <input class="form-control form-control-sm mb-2" name="provider_reference" maxlength="191" placeholder="@lang('Payout transfer reference (optional)')">
+                                            <button class="btn btn-sm btn-success" type="submit">@lang('Mark paid')</button>
+                                        @else
+                                            <input class="form-control form-control-sm mb-2" name="provider_reference" maxlength="191" placeholder="@lang('Payment reference (optional)')">
+                                            <button class="btn btn-sm btn-success" type="submit">@lang('Approve deposit')</button>
+                                        @endif
+                                    </form>
+                                    <form method="post" action="{{ route('admin.wallet-manual.review', $transaction->id) }}">
+                                        @csrf
+                                        <input type="hidden" name="action" value="reject">
+                                        <textarea class="form-control form-control-sm mb-2" name="feedback" rows="2" maxlength="500" placeholder="@lang('Reason for rejection')" required></textarea>
+                                        <button class="btn btn-sm btn-danger" type="submit">@lang('Reject')</button>
+                                    </form>
+                                @else
+                                    <span class="text-muted">@lang('Review permission required')</span>
+                                @endif
                             @elseif($transaction->provider === 'manual')
                                 <span class="text-muted">@lang('Reviewed')</span>
                             @else
