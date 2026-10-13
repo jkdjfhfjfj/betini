@@ -66,12 +66,19 @@
                     <div class="card-body">
                         <div class="d-flex d-lg-flex d-md-block align-items-center">
                             <div>
-                                <div class="d-inline-flex align-items-center">
-                                    <h2 class="text-dark mb-1 font-weight-medium">
-                                        <sup>{{trans($basic->currency_symbol)}}</sup>{{getAmount($userRecord['totalUserBalance'], config('basic.fraction_number'))}}
-                                    </h2>
+                                <div class="w-100" style="max-height: 94px; overflow-y: auto;">
+                                    @forelse($walletBalancesByCurrency as $walletBalance)
+                                        <div class="d-flex align-items-baseline justify-content-between">
+                                            <span class="font-weight-bold">{{ $walletBalance->currency_code }}</span>
+                                            <span>
+                                                <sup>{{ data_get(config('currencies.supported'), $walletBalance->currency_code . '.symbol', $walletBalance->currency_code) }}</sup>{{ getAmount($walletBalance->total_balance, config('basic.fraction_number')) }}
+                                            </span>
+                                        </div>
+                                    @empty
+                                        <span class="text-muted">@lang('No wallet balances')</span>
+                                    @endforelse
                                 </div>
-                                <h6 class="text-muted font-weight-normal mb-0 w-100 text-truncate">@lang('Total User Fund')</h6>
+                                <h6 class="text-muted font-weight-normal mb-0 w-100 text-truncate">@lang('User wallet balances by currency')</h6>
                             </div>
                             <div class="ml-auto mt-md-3 mt-lg-0">
                                 <span class="opacity-7 text-muted"><i class="fas fa-wallet"></i></span>

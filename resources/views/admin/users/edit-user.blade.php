@@ -3,6 +3,10 @@
     @lang($user->username)
 @endsection
 @section('content')
+    @php
+        $walletCurrency = strtoupper($user->wallet_currency ?: 'USD');
+        $walletCurrencySymbol = data_get(config('currencies.supported'), $walletCurrency . '.symbol', $walletCurrency);
+    @endphp
     <div class="m-0 m-md-4 my-4 m-md-0">
         <div class="row">
             <div class="col-md-4">
@@ -36,7 +40,7 @@
                             </li>
 
                             <li class="list-group-item d-flex justify-content-between align-items-center">@lang('Balance')
-                                <span>@lang(config('basic.currency_symbol')){{ getAmount($user->balance, config('basic.fraction_number')) }} </span>
+                                <span>{{ $walletCurrencySymbol }}{{ getAmount($user->balance, config('basic.fraction_number')) }} <small>{{ $walletCurrency }}</small></span>
                             </li>
                         </ul>
                     </div>
@@ -325,8 +329,9 @@
                     <!-- Modal body -->
                     <div class="modal-body">
                         <div class="form-group ">
-                            <label>@lang('Amount')</label>
+                            <label>@lang('Amount') ({{ $walletCurrency }})</label>
                             <input class="form-control" type="text" name="balance" id="balance">
+                            <small class="form-text text-muted">@lang('This amount uses the user’s current wallet currency.')</small>
                         </div>
 
                         <div class="form-group">

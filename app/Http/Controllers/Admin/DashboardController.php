@@ -49,10 +49,15 @@ class DashboardController extends Controller
 
         $data['userRecord'] = collect(User::selectRaw('COUNT(id) AS totalUser')
             ->selectRaw('count(CASE WHEN status = 1  THEN id END) AS activeUser')
-            ->selectRaw('SUM(balance) AS totalUserBalance')
             ->selectRaw('COUNT((CASE WHEN created_at >= CURDATE()  THEN id END)) AS todayJoin')
             ->get()->makeHidden(['fullname', 'mobile'])->toArray())->collapse();
 
+        $data['walletBalancesByCurrency'] = User::query()
+            ->selectRaw("COALESCE(NULLIF(wallet_currency, ''), 'USD') AS currency_code")
+            ->selectRaw('SUM(balance) AS total_balance')
+            ->groupByRaw("COALESCE(NULLIF(wallet_currency, ''), 'USD')")
+            ->orderBy('currency_code')
+            ->get();
 
         $data['tickets'] = collect(Ticket::where('created_at', '>', Carbon::now()->subDays(30))
             ->selectRaw('count(CASE WHEN status = 3  THEN status END) AS closed')

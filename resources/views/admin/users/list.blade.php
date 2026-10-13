@@ -104,7 +104,11 @@
                                     </div>
                                 </div>
                             </td>
-                            <td data-label="@lang('Balance')">{{trans(config('basic.currency_symbol'))}}{{getAmount($user->balance, config('basic.fraction_number'))}}</td>
+                            <td data-label="@lang('Balance')">
+                                @php($walletCurrency = strtoupper($user->wallet_currency ?: 'USD'))
+                                {{ data_get(config('currencies.supported'), $walletCurrency . '.symbol', $walletCurrency) }}{{getAmount($user->balance, config('basic.fraction_number'))}}
+                                <small>{{ $walletCurrency }}</small>
+                            </td>
                             <td data-label="@lang('Last Login')">{{diffForHumans($user->last_login)}}</td>
                             <td data-label="@lang('Status')" class="text-lg-center text-right">
                                 <span class="badge badge-light">
