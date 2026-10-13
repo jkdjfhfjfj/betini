@@ -207,7 +207,7 @@
             <span class="nav-label">@lang('Bet Slip')</span>
         </a>
         <button type="button"
-                class="theme-toggle bottom-theme-toggle"
+                class="bottom-theme-toggle d-none"
                 onclick="darkMode()"
                 aria-label="{{ session()->get('dark-mode') == 'true' ? 'Switch to light mode' : 'Switch to dark mode' }}"
                 aria-pressed="{{ session()->get('dark-mode') == 'true' ? 'true' : 'false' }}">

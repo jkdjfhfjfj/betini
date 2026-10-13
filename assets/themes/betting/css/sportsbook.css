@@ -1866,36 +1866,6 @@ body.auth-screen .login-section.auth-page { padding-top: 24px; }
     .bottom-bar > a > svg.nav-icon { width: 21px; height: 21px; }
 }
 
-/* The same theme control is available at the header and mobile navigation. */
-.bottom-bar > .bottom-theme-toggle {
-    display: flex;
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 48px;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 3px 2px;
-    border: 0;
-    background: transparent;
-    color: var(--sb-muted);
-    cursor: pointer;
-}
-.bottom-bar > .bottom-theme-toggle:hover { color: var(--sb-green); }
-.bottom-bar > .bottom-theme-toggle > svg.nav-icon,
-.bottom-bar > .bottom-theme-toggle > svg:not(.nav-icon) {
-    display: block;
-    width: 20px;
-    height: 20px;
-    flex: 0 0 20px;
-}
-.bottom-bar > .bottom-theme-toggle .nav-label { font-size: 9px; line-height: 1; }
-.bottom-bar > .bottom-theme-toggle .theme-toggle-sun { display: inline-block !important; }
-.bottom-bar > .bottom-theme-toggle .theme-toggle-moon { display: none !important; }
-.dark-mode .bottom-bar > .bottom-theme-toggle .theme-toggle-sun { display: none !important; }
-.dark-mode .bottom-bar > .bottom-theme-toggle .theme-toggle-moon { display: inline-block !important; }
-
 /* Keep mobile drawers exclusive and clearly separated from the page content. */
 @media (max-width: 991.98px) {
     body.sportsbook-drawer-open { overflow: hidden; }
@@ -1953,7 +1923,6 @@ body.auth-screen .login-section.auth-page { padding-top: 24px; }
         transition: transform .22s ease;
     }
     .rightbar.active { transform: translateX(0) !important; }
-    .bottom-bar > .bottom-theme-toggle { flex: 1 1 0; }
     .categories .category-more {
         right: -11px;
         z-index: 5;
@@ -1966,10 +1935,6 @@ body.auth-screen .login-section.auth-page { padding-top: 24px; }
         isolation: isolate;
     }
 }
-@media (max-width: 370px) {
-    .bottom-bar > .bottom-theme-toggle .nav-label { font-size: 8px; }
-}
-
 @media (min-width: 992px) {
     .navbar .navbar-toggler { display: none !important; }
 }
