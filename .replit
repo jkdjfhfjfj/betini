@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "php-8.2"]
+modules = ["nodejs-24", "php-8.1"]
 
 [deployment]
 router = "application"
