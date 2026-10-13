@@ -167,7 +167,7 @@
                         </td>
                         <td style="min-width: 230px;">
                             @if($transaction->provider === 'manual' && in_array($transaction->status, ['pending', 'processing'], true))
-                                @if(adminAccessRoute(config('role.payment_log.access.edit')))
+                                @if(adminAccessRoute(array_merge(config('role.payment_log.access.edit', []), config('role.payout_manage.access.edit', []))))
                                     <form method="post" action="{{ route('admin.wallet-manual.review', $transaction->id) }}" class="mb-2">
                                         @csrf
                                         <input type="hidden" name="action" value="approve">

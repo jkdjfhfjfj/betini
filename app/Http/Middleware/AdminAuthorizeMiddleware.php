@@ -24,8 +24,8 @@ class AdminAuthorizeMiddleware
             'admin.wallet-providers.save' => ['admin.wallet-providers.save', 'admin.edit.payment.methods'],
             'admin.wallet-providers.rates' => ['admin.wallet-providers.rates', 'admin.edit.payment.methods'],
             'admin.wallet-providers.register-channel' => ['admin.wallet-providers.register-channel', 'admin.deposit.manual.create'],
-            'admin.wallet-manual.index' => ['admin.wallet-manual.index', 'admin.payment.pending', 'admin.payment.log', 'admin.payment.methods'],
-            'admin.wallet-manual.review' => ['admin.wallet-manual.review', 'admin.payment.action', 'admin.payment.methods'],
+            'admin.wallet-manual.index' => ['admin.wallet-manual.index', 'admin.payment.pending', 'admin.payment.log', 'admin.payment.methods', 'admin.payout-request', 'admin.payout-log', 'admin.payout-log.search'],
+            'admin.wallet-manual.review' => ['admin.wallet-manual.review', 'admin.payment.action', 'admin.payment.methods', 'admin.payout-action'],
         ];
         if (isset($walletPermissions[$routeName])) {
             if ($access->intersect($walletPermissions[$routeName])->isNotEmpty()) {

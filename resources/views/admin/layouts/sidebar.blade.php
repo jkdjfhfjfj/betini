@@ -177,43 +177,11 @@
                         </a>
                     </li>
                 @endif
-                @if(adminAccessRoute(config('role.payment_log.access.view')))
-                    <li class="sidebar-item {{menuActive(['admin.payment.pending'],3)}}">
-                        <a class="sidebar-link" href="{{route('admin.payment.pending')}}" aria-expanded="false">
-                            <i class="fas fa-spinner text-warning"></i>
-                            <span class="hide-menu">@lang('Deposit Request')</span>
-                        </a>
-                    </li>
-
-                    <li class="sidebar-item {{menuActive(['admin.payment.log','admin.payment.search'],3)}}">
-                        <a class="sidebar-link" href="{{route('admin.payment.log')}}" aria-expanded="false">
-                            <i class="fas fa-history text-primary"></i>
-                            <span class="hide-menu">@lang('Payment Log')</span>
-                        </a>
-                    </li>
+                @if(adminAccessRoute(array_merge(config('role.payment_log.access.view', []), config('role.payout_manage.access.view', []))))
                     <li class="sidebar-item {{menuActive(['admin.wallet-manual*'],3)}}">
                         <a class="sidebar-link" href="{{route('admin.wallet-manual.index')}}" aria-expanded="false">
                             <i class="fas fa-exchange-alt text-success"></i>
                             <span class="hide-menu">@lang('Wallet Transactions')</span>
-                        </a>
-                    </li>
-                @endif
-
-
-                @if(adminAccessRoute(config('role.payout_manage.access.view')))
-                    <li class="list-divider"></li>
-                    <li class="nav-small-cap"><span class="hide-menu">@lang('Payout Settings')</span></li>
-                    <li class="sidebar-item {{menuActive(['admin.payout-request'],3)}}">
-                        <a class="sidebar-link" href="{{route('admin.payout-request')}}" aria-expanded="false">
-                            <i class="fas fa-hand-holding-usd text-warning"></i>
-                            <span class="hide-menu">@lang('Payout Request')</span>
-                        </a>
-                    </li>
-
-                    <li class="sidebar-item {{menuActive(['admin.payout-log*'],3)}}">
-                        <a class="sidebar-link" href="{{route('admin.payout-log')}}" aria-expanded="false">
-                            <i class="fas fa-history text-primary"></i>
-                            <span class="hide-menu">@lang('Payout Log')</span>
                         </a>
                     </li>
                 @endif

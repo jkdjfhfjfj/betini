@@ -209,13 +209,15 @@ $arr = [
                 'admin.payout-log',
                 'admin.payout-request',
                 'admin.payout-log.search',
+                'admin.wallet-manual.index',
             ],
             'add' => [
                 'admin.payout-method.create',
             ],
             'edit' => [
                 'admin.payout-method.edit',
-                'admin.payout-action'
+                'admin.payout-action',
+                'admin.wallet-manual.review',
             ],
             'delete' => [],
         ],
