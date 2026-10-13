@@ -53,11 +53,13 @@
             @auth
                 @include($theme.'partials.wallet-currency-switch')
                 <div class="dropdown user-dropdown d-inline-block">
-                    <button class="dropdown-toggle">
-                        <svg class="header-account-icon" viewBox="0 0 24 24" aria-hidden="true">
-                            <circle cx="12" cy="8" r="3.5"></circle>
-                            <path d="M4.5 20c.7-3.5 3.4-5.5 7.5-5.5s6.8 2 7.5 5.5"></path>
-                        </svg>
+                    <button type="button"
+                            class="dropdown-toggle"
+                            data-toggle="dropdown"
+                            aria-label="@lang('Open account menu')"
+                            aria-haspopup="true"
+                            aria-expanded="false">
+                        <i class="material-icons-round header-account-icon" aria-hidden="true">person</i>
                     </button>
                     <ul class="dropdown-menu">
                         <li>
@@ -113,10 +115,7 @@
             @endauth
             @guest
                 <a href="{{ route('login') }}" class="header-account-link" aria-label="@lang('Sign in')">
-                    <svg class="header-account-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="12" cy="8" r="3.5"></circle>
-                        <path d="M4.5 20c.7-3.5 3.4-5.5 7.5-5.5s6.8 2 7.5 5.5"></path>
-                    </svg>
+                    <i class="material-icons-round header-account-icon" aria-hidden="true">person</i>
                 </a>
             @endguest
 
@@ -177,63 +176,34 @@
 
     <div class="bottom-bar fixed-bottom text-center">
         <a href="{{ route('home') }}" class="text-dark {{ Request::routeIs('home','category','tournament','match') ? 'active' : '' }}" @if(Request::routeIs('home','category','tournament','match')) aria-current="page" @endif>
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m3.5 10 8.5-7 8.5 7v10.5h-6v-6h-5v6h-6z"></path>
-            </svg>
+            <i class="material-icons-round nav-icon" aria-hidden="true">home</i>
             <span class="nav-label">@lang('Home')</span>
         </a>
         <a href="{{ route('home') }}" class="text-dark"
            onclick="localStorage.setItem('showType', 'live')">
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="2.4"></circle>
-                <path d="M7.8 7.8a5.9 5.9 0 0 0 0 8.4m8.4-8.4a5.9 5.9 0 0 1 0 8.4M4.6 4.6a10.5 10.5 0 0 0 0 14.8m14.8-14.8a10.5 10.5 0 0 1 0 14.8"></path>
-            </svg>
+            <i class="material-icons-round nav-icon" aria-hidden="true">sensors</i>
             <span class="nav-label">@lang('Live')</span>
         </a>
 
-        @if(Request::routeIs('home', 'category', 'tournament', 'match'))
-            <a href="#rightbar" class="text-dark bet-slip-link"
-               aria-label="@lang('Bet Slip')" aria-controls="rightbar" aria-expanded="false"
-               onclick="window.openSidebar('rightbar'); return false;">
-        @else
-            <a href="{{ route('home', ['panel' => 'betslip']) }}" class="text-dark bet-slip-link"
-               aria-label="@lang('Open bet slip')" aria-controls="rightbar" aria-expanded="false">
-        @endif
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z"></path>
-                <path d="M12 8v1m0 3v1m0 3v1"></path>
-            </svg>
+        <a href="{{ route('home', ['panel' => 'betslip']) }}" class="text-dark bet-slip-link"
+           aria-label="@lang('Open bet slip')" aria-controls="rightbar" aria-expanded="false"
+           onclick="if (window.openSidebar && window.openSidebar('rightbar')) return false;">
+            <i class="material-icons-round nav-icon" aria-hidden="true">confirmation_number</i>
             <span class="nav-label">@lang('Bet Slip')</span>
         </a>
 
         @auth
             <a href="{{ route('user.betHistory') }}" class="text-dark {{ Request::routeIs('user.betHistory') ? 'active' : '' }}" @if(Request::routeIs('user.betHistory')) aria-current="page" @endif>
-                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 3.5 8 5l2-1.5L12 5l2-1.5L16 5l2-1.5v17L16 19l-2 1.5L12 19l-2 1.5L8 19l-2 1.5z"></path>
-                    <path d="M9 9h6M9 12h6M9 15h4"></path>
-                </svg>
+                <i class="material-icons-round nav-icon" aria-hidden="true">receipt_long</i>
                 <span class="nav-label">@lang('Bet History')</span>
             </a>
             <a href="{{ route('user.profile') }}" class="text-dark {{ Request::routeIs('user.profile') ? 'active' : '' }}" @if(Request::routeIs('user.profile')) aria-current="page" @endif>
-                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="8" r="3.5"></circle>
-                    <path d="M4.5 20c.7-3.5 3.4-5.5 7.5-5.5s6.8 2 7.5 5.5"></path>
-                </svg>
+                <i class="material-icons-round nav-icon" aria-hidden="true">person</i>
                 <span class="nav-label">@lang('Profile')</span>
             </a>
         @else
             <a href="{{ route('login') }}" class="text-dark">
-                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 3.5 8 5l2-1.5L12 5l2-1.5L16 5l2-1.5v17L16 19l-2 1.5L12 19l-2 1.5L8 19l-2 1.5z"></path>
-                    <path d="M9 9h6M9 12h6M9 15h4"></path>
-                </svg>
-                <span class="nav-label">@lang('Bet History')</span>
-            </a>
-            <a href="{{ route('login') }}" class="text-dark">
-                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="8" r="3.5"></circle>
-                    <path d="M4.5 20c.7-3.5 3.4-5.5 7.5-5.5s6.8 2 7.5 5.5"></path>
-                </svg>
+                <i class="material-icons-round nav-icon" aria-hidden="true">person</i>
                 <span class="nav-label">@lang('Profile')</span>
             </a>
         @endauth

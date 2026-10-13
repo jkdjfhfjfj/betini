@@ -198,17 +198,12 @@
 
                 removeItem(obj) {
                     var _this = this;
-                    _this.betSlip.splice(_this.betSlip.indexOf(obj), 1);
+                    _this.betSlip = _this.betSlip.filter(function (item) {
+                        return item.id !== obj.id;
+                    });
                     _this.totalOdds = _this.oddsCalc(_this.betSlip)
 
-                    var selectData = JSON.parse(localStorage.getItem('newBetSlip'));
-                    var storeIds = selectData.filter(function (item) {
-                        if (item.id === obj.id) {
-                            return false;
-                        }
-                        return true;
-                    });
-                    localStorage.setItem("newBetSlip", JSON.stringify(storeIds));
+                    localStorage.setItem("newBetSlip", JSON.stringify(_this.betSlip));
                 },
 
                 oddsCalc(obj) {
@@ -348,7 +343,11 @@
                                     obj.is_unlock_question = 1;
                                     return obj
                                 });
-                                _this.betSlip.concat(newSlip, newUnlisted);
+                                _this.betSlip = _this.betSlip.concat(
+                                    Array.isArray(newSlip) ? newSlip : [],
+                                    newUnlisted
+                                );
+                                _this.totalOdds = _this.oddsCalc(_this.betSlip);
                                 localStorage.setItem("newBetSlip", JSON.stringify(_this.betSlip));
                                 return 0;
                             }
@@ -363,7 +362,8 @@
 
                         })
                         .catch(function (err) {
-
+                            var message = err && err.response && err.response.data && err.response.data.message;
+                            Notiflix.Notify.Failure(message || "We could not place your bet. Check your balance and try again.");
                         });
                 },
 
