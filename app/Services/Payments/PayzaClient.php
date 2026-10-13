@@ -64,6 +64,11 @@ class PayzaClient
             'reference' => $payment['reference'],
             'metadata' => $payment['metadata'],
         ];
+
+        if (strtoupper((string)$payment['currency']) === 'KES') {
+            $body['stk_push'] = false;
+        }
+
         return $this->checkedJson($this->request($settings)->post($this->baseUrl . '/pay', $body));
     }
 

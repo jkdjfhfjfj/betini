@@ -95,57 +95,26 @@ class WalletWebhookController extends Controller
         $event = strtolower((string)($payload['event'] ?? ''));
         if ($entry->direction === 'deposit' && in_array($event, ['payment.success', 'payment.failed', 'payment.cancelled'], true)) {
             if ($event === 'payment.success') {
-                try {
-                    $verified = app(PayzaClient::class)->verifyPayment($settings, $entry->reference);
-                    $verifiedStatus = strtolower((string)(
-                        data_get($verified, 'data.status')
-                        ?: data_get($verified, 'data.payment.status')
-                        ?: data_get($verified, 'data.transaction.status')
-                        ?: data_get($verified, 'status')
-                    ));
-                    $amount = data_get($verified, 'data.amount')
-                        ?? data_get($verified, 'data.payment.amount')
-                        ?? data_get($verified, 'data.transaction.amount')
-                        ?? data_get($verified, 'amount')
-                        ?? $payload['amount']
-                        ?? null;
-                    $currency = strtoupper((string)(
-                        data_get($verified, 'data.currency')
-                        ?: data_get($verified, 'data.payment.currency')
-                        ?: data_get($verified, 'data.transaction.currency')
-                        ?: data_get($verified, 'currency')
-                        ?: ($payload['currency'] ?? '')
-                    ));
-
-                    if (in_array($verifiedStatus, ['success', 'succeeded', 'paid', 'completed'], true)) {
-                        if ($currency !== strtoupper($entry->currency_code)
-                            || !is_numeric($amount)
-                            || abs((float)$amount - (float)$entry->amount) > 0.02) {
-                            app(WalletProviderService::class)->failDeposit(
-                                $entry->reference,
-                                'The confirmed payment amount or currency did not match this deposit.'
-                            );
-                            return response()->json(['received' => true]);
-                        }
-                        app(WalletProviderService::class)->completeDeposit($entry->reference);
-                    } elseif (in_array($verifiedStatus, ['failed', 'cancelled', 'canceled', 'rejected', 'expired'], true)) {
-                        app(WalletProviderService::class)->failDeposit($entry->reference, 'Payza reported a failed or cancelled payment.');
+                $status = strtolower((string)($payload['status'] ?? ''));
+                if ($status === 'success') {
+                    $amount = $payload['amount'] ?? null;
+                    $currency = strtoupper((string)($payload['currency'] ?? ''));
+                    if ($currency !== strtoupper($entry->currency_code)
+                        || !is_numeric($amount)
+                        || abs((float)$amount - (float)$entry->amount) > 0.02) {
+                        app(WalletProviderService::class)->failDeposit(
+                            $entry->reference,
+                            'The signed payment amount or currency did not match this deposit.'
+                        );
+                        return response()->json(['received' => true]);
                     }
-                } catch (\Throwable $exception) {
-                    report($exception);
-                    return response()->json(['error' => 'Payment could not be verified.'], 503);
+                    app(WalletProviderService::class)->completeDeposit($entry->reference);
                 }
             } else {
-                app(WalletProviderService::class)->failDeposit($reference, 'Payza reported a ' . str_replace('payment.', '', $event) . ' payment.');
-            }
-        } elseif ($entry->direction === 'withdrawal') {
-            $status = strtolower((string)($payload['status'] ?? ''));
-            if (in_array($event, ['payout.completed', 'payout.success', 'payout.processed'], true)
-                || in_array($status, ['completed', 'success', 'succeeded'], true)) {
-                    app(WalletProviderService::class)->completeWithdrawal($entry->reference);
-            } elseif (in_array($event, ['payout.failed', 'payout.rejected'], true)
-                || in_array($status, ['failed', 'rejected'], true)) {
-                app(WalletProviderService::class)->failWithdrawal($entry->reference, 'Payza reported a failed or rejected payout.');
+                app(WalletProviderService::class)->failDeposit(
+                    $entry->reference,
+                    'Payza reported a ' . str_replace('payment.', '', $event) . ' payment.'
+                );
             }
         }
 
