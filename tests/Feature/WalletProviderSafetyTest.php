@@ -7,6 +7,7 @@ use App\Models\PaymentProviderSetting;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletProviderTransaction;
+use App\Services\Payments\PayzaClient;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,7 +81,7 @@ class WalletProviderSafetyTest extends TestCase
         Http::assertSentCount(2);
     }
 
-    public function test_payza_success_webhook_is_signed_verified_and_idempotent()
+    public function test_payza_signed_success_webhook_credits_once_without_a_second_provider_request()
     {
         $user = $this->createUser(3, 'KES');
         $entry = $this->createProviderTransaction($user, [
@@ -92,22 +93,27 @@ class WalletProviderSafetyTest extends TestCase
         ]);
         $signingSecret = 'payza-webhook-test-secret';
         $this->saveProviderSettings('payza', [
-            'public_key' => 'payza-test-public',
-            'secret_key' => 'payza-test-secret',
             'webhook_secret' => $signingSecret,
         ]);
 
-        Http::fake([
-            'https://payzaapi.co.ke/api/v1/verify/*' => Http::response([
-                'success' => true,
-                'data' => ['status' => 'success', 'amount' => 25, 'currency' => 'KES'],
-            ], 200),
-        ]);
-
-        $payload = ['event' => 'payment.success', 'reference' => $entry->reference];
+        Http::fake();
+        $payload = [
+            'event' => 'payment.success',
+            'reference' => $entry->reference,
+            'status' => 'success',
+            'amount' => 25,
+            'currency' => 'KES',
+        ];
         $body = json_encode($payload);
-        $signature = hash_hmac('sha256', $body, $signingSecret);
         $controller = app(WalletWebhookController::class);
+
+        $invalidResponse = $controller->payza($this->jsonRequest($payload, [
+            'X-Payza-Signature' => 'invalid-signature',
+        ], $body));
+        $this->assertSame(401, $invalidResponse->getStatusCode());
+        $this->assertEquals(3, (float)$user->fresh()->balance);
+
+        $signature = hash_hmac('sha256', $body, $signingSecret);
         $firstResponse = $controller->payza($this->jsonRequest($payload, [
             'X-Payza-Signature' => $signature,
         ], $body));
@@ -120,10 +126,10 @@ class WalletProviderSafetyTest extends TestCase
         $this->assertEquals(28, (float)$user->fresh()->balance);
         $this->assertSame('succeeded', $entry->fresh()->status);
         $this->assertSame(1, Transaction::where('trx_id', $entry->reference)->count());
-        Http::assertSentCount(2);
+        Http::assertNothingSent();
     }
 
-    public function test_payza_does_not_credit_a_success_event_when_verified_amount_or_currency_does_not_match()
+    public function test_payza_does_not_credit_a_signed_success_event_when_amount_or_currency_does_not_match()
     {
         $user = $this->createUser(10, 'KES');
         $entry = $this->createProviderTransaction($user, [
@@ -135,19 +141,17 @@ class WalletProviderSafetyTest extends TestCase
         ]);
         $signingSecret = 'payza-webhook-test-secret';
         $this->saveProviderSettings('payza', [
-            'public_key' => 'payza-test-public',
-            'secret_key' => 'payza-test-secret',
             'webhook_secret' => $signingSecret,
         ]);
 
-        Http::fake([
-            'https://payzaapi.co.ke/api/v1/verify/*' => Http::response([
-                'success' => true,
-                'data' => ['status' => 'success', 'amount' => 24, 'currency' => 'KES'],
-            ], 200),
-        ]);
-
-        $payload = ['event' => 'payment.success', 'reference' => $entry->reference];
+        Http::fake();
+        $payload = [
+            'event' => 'payment.success',
+            'reference' => $entry->reference,
+            'status' => 'success',
+            'amount' => 24,
+            'currency' => 'KES',
+        ];
         $body = json_encode($payload);
         $response = app(WalletWebhookController::class)->payza($this->jsonRequest(
             $payload,
@@ -159,6 +163,84 @@ class WalletProviderSafetyTest extends TestCase
         $this->assertEquals(10, (float)$user->fresh()->balance);
         $this->assertSame('failed', $entry->fresh()->status);
         $this->assertSame(0, Transaction::count());
+        Http::assertNothingSent();
+    }
+
+    public function test_payza_kes_payment_uses_hosted_checkout_without_sending_an_stk_push()
+    {
+        Http::fake([
+            'https://payzaapi.co.ke/api/v1/pay' => Http::response([
+                'success' => true,
+                'data' => ['payment_url' => 'https://payzaapi.co.ke/payment/checkout?ref=wallet-ref'],
+            ], 200),
+        ]);
+
+        $client = app(PayzaClient::class);
+        $settings = ['public_key' => 'test-public', 'secret_key' => 'test-secret'];
+        $payment = [
+            'amount' => 1500,
+            'currency' => 'KES',
+            'email' => 'player@example.test',
+            'name' => 'Test Player',
+            'phone' => '254712345678',
+            'callback_url' => 'https://example.test/wallet/callback',
+            'redirect_url' => 'https://example.test/wallet/return',
+            'cancel_url' => 'https://example.test/wallet',
+            'reference' => 'wallet-ref',
+            'metadata' => ['wallet_reference' => 'wallet-ref'],
+        ];
+
+        $response = $client->initiatePayment($settings, $payment);
+
+        $this->assertSame(
+            'https://payzaapi.co.ke/payment/checkout?ref=wallet-ref',
+            data_get($response, 'data.payment_url')
+        );
+        Http::assertSent(function ($request) {
+            $data = $request->data();
+
+            return $request->method() === 'POST'
+                && $request->url() === 'https://payzaapi.co.ke/api/v1/pay'
+                && ($data['stk_push'] ?? null) === false
+                && ($data['customer']['email'] ?? null) === 'player@example.test';
+        });
+    }
+
+    public function test_undocumented_payza_payout_webhook_does_not_change_withdrawal_state()
+    {
+        $user = $this->createUser(60, 'USD');
+        $entry = $this->createProviderTransaction($user, [
+            'reference' => 'payza-payout-webhook-1',
+            'provider' => 'payza',
+            'direction' => 'withdrawal',
+            'currency_code' => 'USD',
+            'amount' => 40,
+            'net_amount' => 40,
+            'status' => 'processing',
+        ]);
+        $signingSecret = 'payza-webhook-test-secret';
+        $this->saveProviderSettings('payza', ['webhook_secret' => $signingSecret]);
+        Http::fake();
+
+        $payload = [
+            'event' => 'payout.completed',
+            'reference' => $entry->reference,
+            'status' => 'completed',
+            'amount' => 40,
+            'currency' => 'USD',
+        ];
+        $body = json_encode($payload);
+        $response = app(WalletWebhookController::class)->payza($this->jsonRequest(
+            $payload,
+            ['X-Payza-Signature' => hash_hmac('sha256', $body, $signingSecret)],
+            $body
+        ));
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('processing', $entry->fresh()->status);
+        $this->assertEquals(60, (float)$user->fresh()->balance);
+        $this->assertSame(0, Transaction::count());
+        Http::assertNothingSent();
     }
 
     public function test_paystack_webhook_requires_a_valid_signature_and_credits_a_verified_charge_only_once()

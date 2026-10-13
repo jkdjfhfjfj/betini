@@ -1,3 +1,4 @@
 - [GitHub secret-push cleanup](github-secret-push-cleanup.md) — push protection scans commit history; removing a key from current files alone may not unblock a push.
 - [Multi-currency wallet rules](multi-currency-wallet.md) — one active wallet per user; preserve legacy balances in USD and use USD as the conversion base.
 - [Isolated Laravel database checks](isolated-laravel-database.md) — local SQLite commands must explicitly clear `DATABASE_URL`, which can override `DB_CONNECTION`.
+- [PayzaAPI contract](payzaapi-contract.md) — use hosted checkout and signed payment events; reconcile payouts via documented status polling unless Payza confirms another contract.
