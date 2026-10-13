@@ -20,7 +20,7 @@
 
     <script src="{{ asset('assets/admin/js/fontawesome/fontawesomepro.js') }}"></script>
     <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/style.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/sportsbook.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/sportsbook.css') }}?v={{ filemtime(base_path($themeTrue . 'css/sportsbook.css')) }}"/>
 
     @stack('style')
 
@@ -172,7 +172,7 @@
 <script src="{{ asset($themeTrue . 'js/jquery.skitter.min.js') }}"></script>
 <script src="{{ asset($themeTrue . 'js/aos.js') }}"></script>
 <script src="{{ asset($themeTrue . 'js/jquery.fancybox.min.js') }}"></script>
-<script src="{{ asset($themeTrue . 'js/script.js') }}"></script>
+<script src="{{ asset($themeTrue . 'js/script.js') }}?v={{ filemtime(base_path($themeTrue . 'js/script.js')) }}"></script>
 
 
 <script src="{{asset('assets/global/js/notiflix-aio-2.7.0.min.js')}}"></script>
@@ -259,11 +259,10 @@
 
     const darkMode = () => {
         var $theme = document.body.classList.toggle("dark-mode");
-        var themeButton = document.querySelector(".theme-toggle");
-        if (themeButton) {
+        document.querySelectorAll(".theme-toggle").forEach((themeButton) => {
             themeButton.setAttribute("aria-pressed", $theme ? "true" : "false");
             themeButton.setAttribute("aria-label", $theme ? "Switch to light mode" : "Switch to dark mode");
-        }
+        });
         $.ajax({
             url: "{{ route('themeMode') }}/" + $theme,
             type: 'get',

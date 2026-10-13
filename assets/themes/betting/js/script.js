@@ -29,18 +29,42 @@ const setSidebarExpanded = (id, expanded) => {
     });
 };
 
+const sidebarIds = ["leftbar", "userPanelSideBar", "rightbar"];
+const syncSidebarState = () => {
+    const anyOpen = sidebarIds.some((id) => {
+        const panel = document.getElementById(id);
+        return panel && panel.classList.contains("active");
+    });
+    document.body.classList.toggle("sportsbook-drawer-open", anyOpen);
+};
+
+const closeOtherSidebars = (activeId) => {
+    sidebarIds.forEach((id) => {
+        if (id === activeId) return;
+        const panel = document.getElementById(id);
+        if (!panel) return;
+        panel.classList.remove("active");
+        setSidebarExpanded(id, false);
+    });
+};
+
 window.toggleSidebar = (id) => {
     const element = document.getElementById(id);
     if (!element) return false;
-    const expanded = element.classList.toggle("active");
+    const expanded = !element.classList.contains("active");
+    if (expanded) closeOtherSidebars(id);
+    element.classList.toggle("active", expanded);
     setSidebarExpanded(id, expanded);
+    syncSidebarState();
     return expanded;
 };
 window.openSidebar = (id) => {
     const element = document.getElementById(id);
     if (!element) return false;
+    closeOtherSidebars(id);
     element.classList.add("active");
     setSidebarExpanded(id, true);
+    syncSidebarState();
     return true;
 };
 window.removeClass = (id) => {
@@ -48,8 +72,14 @@ window.removeClass = (id) => {
     if (!element) return false;
     element.classList.remove("active");
     setSidebarExpanded(id, false);
+    syncSidebarState();
     return true;
 };
+
+document.addEventListener("click", (event) => {
+    if (event.target !== document.body || !document.body.classList.contains("sportsbook-drawer-open")) return;
+    sidebarIds.forEach((id) => window.removeClass(id));
+});
 
 window.toggleSportsMore = (button) => {
     const menuId = button && button.getAttribute("aria-controls");
@@ -78,8 +108,7 @@ document.addEventListener("keydown", (event) => {
     const button = document.querySelector("#sportsCategoryBar .category-more");
     if (menu) menu.hidden = true;
     if (button) button.setAttribute("aria-expanded", "false");
-    const rightbar = document.getElementById("rightbar");
-    if (rightbar && rightbar.classList.contains("active")) window.removeClass("rightbar");
+    sidebarIds.forEach((id) => window.removeClass(id));
 });
 
 // Admin-managed home promotions: touch-scrollable, keyboard-accessible slides.

@@ -10,7 +10,7 @@
     <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/bootstrap.min.css') }}"/>
     <!-- custom css -->
     <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/style.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/sportsbook.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ asset($themeTrue . 'css/sportsbook.css') }}?v={{ filemtime(base_path($themeTrue . 'css/sportsbook.css')) }}"/>
 </head>
 <body @if(session()->get('dark-mode') == 'true') class="dark-mode"  @endif>
     @yield('content')

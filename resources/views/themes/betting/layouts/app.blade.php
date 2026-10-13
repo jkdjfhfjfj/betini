@@ -174,11 +174,10 @@
     // dark mode
     const darkMode = () => {
         var $theme = document.body.classList.toggle("dark-mode");
-        var themeButton = document.querySelector(".theme-toggle");
-        if (themeButton) {
+        document.querySelectorAll(".theme-toggle").forEach((themeButton) => {
             themeButton.setAttribute("aria-pressed", $theme ? "true" : "false");
             themeButton.setAttribute("aria-label", $theme ? "Switch to light mode" : "Switch to dark mode");
-        }
+        });
         $.ajax({
             url: "{{ route('themeMode') }}/" + $theme,
             type: 'get',

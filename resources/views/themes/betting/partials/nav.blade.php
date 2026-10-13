@@ -206,6 +206,20 @@
             </svg>
             <span class="nav-label">@lang('Bet Slip')</span>
         </a>
+        <button type="button"
+                class="theme-toggle bottom-theme-toggle"
+                onclick="darkMode()"
+                aria-label="{{ session()->get('dark-mode') == 'true' ? 'Switch to light mode' : 'Switch to dark mode' }}"
+                aria-pressed="{{ session()->get('dark-mode') == 'true' ? 'true' : 'false' }}">
+            <svg class="theme-toggle-sun" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path>
+            </svg>
+            <svg class="theme-toggle-moon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20.2 15.5A8.8 8.8 0 0 1 8.5 3.8 8.9 8.9 0 1 0 20.2 15.5Z"></path>
+            </svg>
+            <span class="nav-label">Theme</span>
+        </button>
 
         @auth
             <a href="{{ route('user.betHistory') }}" class="text-dark {{ Request::routeIs('user.betHistory') ? 'active' : '' }}" @if(Request::routeIs('user.betHistory')) aria-current="page" @endif>
