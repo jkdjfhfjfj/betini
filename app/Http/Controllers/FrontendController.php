@@ -6,7 +6,7 @@ use App\Models\Content;
 use App\Models\GameCategory;
 use App\Models\GameMatch;
 use App\Models\Language;
-use App\Models\Template;
+use App\Models\TemplateMedia;
 use App\Models\Subscriber;
 use App\Http\Traits\Notify;
 use Illuminate\Http\Request;
@@ -26,7 +26,7 @@ class FrontendController extends Controller
     public function index()
     {
         $templateSection = ['hero', 'contact-us'];
-        $data['templates'] = Template::templateMedia()->whereIn('section_name', $templateSection)->get()->groupBy('section_name');
+        $data['templates'] = TemplateMedia::query()->whereIn('section_name', $templateSection)->get()->groupBy('section_name');
 
         $contentSection = ['slider'];
         $data['contentDetails'] = ContentDetails::select('id', 'content_id', 'description', 'created_at')
@@ -98,7 +98,7 @@ class FrontendController extends Controller
     {
 
         $templateSection = ['about-us', 'testimonial'];
-        $data['templates'] = Template::templateMedia()->whereIn('section_name', $templateSection)->get()->groupBy('section_name');
+        $data['templates'] = TemplateMedia::query()->whereIn('section_name', $templateSection)->get()->groupBy('section_name');
 
         $contentSection = ['testimonial'];
         $data['contentDetails'] = ContentDetails::select('id', 'content_id', 'description', 'created_at')
@@ -120,7 +120,7 @@ class FrontendController extends Controller
         $contentSection = ['blog'];
 
         $templateSection = ['blog'];
-        $data['templates'] = Template::templateMedia()->whereIn('section_name', $templateSection)->get()->groupBy('section_name');
+        $data['templates'] = TemplateMedia::query()->whereIn('section_name', $templateSection)->get()->groupBy('section_name');
 
         $data['contentDetails'] = ContentDetails::select('id', 'content_id', 'description', 'created_at')
             ->whereHas('content', function ($query) use ($contentSection) {
@@ -177,7 +177,7 @@ class FrontendController extends Controller
     {
 
         $templateSection = ['faq'];
-        $data['templates'] = Template::templateMedia()->whereIn('section_name', $templateSection)->get()->groupBy('section_name');
+        $data['templates'] = TemplateMedia::query()->whereIn('section_name', $templateSection)->get()->groupBy('section_name');
 
         $contentSection = ['faq'];
         $data['contentDetails'] = ContentDetails::select('id', 'content_id', 'description', 'created_at')
@@ -197,7 +197,7 @@ class FrontendController extends Controller
     public function contact()
     {
         $templateSection = ['contact-us'];
-        $templates = Template::templateMedia()->whereIn('section_name', $templateSection)->get()->groupBy('section_name');
+        $templates = TemplateMedia::query()->whereIn('section_name', $templateSection)->get()->groupBy('section_name');
         $title = 'Contact Us';
         $contact = @$templates['contact-us'][0]->description;
 

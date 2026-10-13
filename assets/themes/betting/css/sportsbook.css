@@ -1880,6 +1880,10 @@ body.auth-screen .login-section.auth-page { padding-top: 24px; }
     flex: 0 0 20px;
 }
 .bottom-bar > .bottom-theme-toggle .nav-label { font-size: 9px; line-height: 1; }
+.bottom-bar > .bottom-theme-toggle .theme-toggle-sun { display: inline-block !important; }
+.bottom-bar > .bottom-theme-toggle .theme-toggle-moon { display: none !important; }
+.dark-mode .bottom-bar > .bottom-theme-toggle .theme-toggle-sun { display: none !important; }
+.dark-mode .bottom-bar > .bottom-theme-toggle .theme-toggle-moon { display: inline-block !important; }
 
 /* Keep mobile drawers exclusive and clearly separated from the page content. */
 @media (max-width: 991.98px) {
@@ -1922,6 +1926,17 @@ body.auth-screen .login-section.auth-page { padding-top: 24px; }
     }
     .rightbar.active { transform: translateX(0) !important; }
     .bottom-bar > .bottom-theme-toggle { flex: 1 1 0; }
+    .categories .category-more {
+        right: -11px;
+        z-index: 5;
+        min-width: 72px;
+        justify-content: center;
+        gap: 5px;
+        padding: 0 9px;
+        background: var(--sb-surface);
+        box-shadow: -12px 0 14px var(--sb-canvas), -1px 0 var(--sb-line);
+        isolation: isolate;
+    }
 }
 @media (max-width: 370px) {
     .bottom-bar > .bottom-theme-toggle .nav-label { font-size: 8px; }

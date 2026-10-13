@@ -112,7 +112,10 @@ document.addEventListener("keydown", (event) => {
 });
 
 // Admin-managed home promotions: touch-scrollable, keyboard-accessible slides.
-document.querySelectorAll("[data-home-promo-carousel]").forEach((carousel) => {
+// Wait until the home Vue app has mounted; it can replace the initial markup.
+const initializeHomePromoCarousels = () => {
+    document.querySelectorAll("[data-home-promo-carousel]").forEach((carousel) => {
+    if (carousel.dataset.promoInitialized === "true") return;
     const track = carousel.querySelector("[data-home-promo-track]");
     const slides = Array.from(carousel.querySelectorAll(".home-promo-slide"));
     const dots = Array.from(carousel.querySelectorAll("[data-promo-slide]"));
@@ -120,6 +123,7 @@ document.querySelectorAll("[data-home-promo-carousel]").forEach((carousel) => {
     const next = carousel.querySelector("[data-promo-next]");
 
     if (!track || slides.length < 2) return;
+    carousel.dataset.promoInitialized = "true";
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let activeIndex = 0;
@@ -212,7 +216,14 @@ document.querySelectorAll("[data-home-promo-carousel]").forEach((carousel) => {
     });
 
     startTimer();
-});
+    });
+};
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeHomePromoCarousels, { once: true });
+} else {
+    window.setTimeout(initializeHomePromoCarousels, 0);
+}
 
 // // dark mode
 // const darkMode = () => {

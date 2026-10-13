@@ -8,7 +8,7 @@ use App\Models\Fund;
 use App\Models\Gateway;
 use App\Models\Language;
 use App\Models\PayoutLog;
-use App\Models\Template;
+use App\Models\TemplateMedia;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -52,10 +52,10 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('languages', Language::orderBy('name')->where('is_active', 1)->get());
 
                 $templateSection = ['contact-us'];
-                $view->with('contactUs', Template::templateMedia()->whereIn('section_name', $templateSection)->get()->groupBy('section_name'));
+                $view->with('contactUs', TemplateMedia::query()->whereIn('section_name', $templateSection)->get()->groupBy('section_name'));
 
                 $templateNewsletter = ['news-letter'];
-                $view->with('newsLetter', Template::templateMedia()->whereIn('section_name', $templateNewsletter)->get()->groupBy('section_name'));
+                $view->with('newsLetter', TemplateMedia::query()->whereIn('section_name', $templateNewsletter)->get()->groupBy('section_name'));
 
                 $contentSection = ['support','social'];
                 $view->with('contentDetails', ContentDetails::select('id', 'content_id', 'description')
