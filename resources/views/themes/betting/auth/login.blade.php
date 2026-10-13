@@ -8,7 +8,6 @@
                     <div class="text-box h-100">
                         <div class="overlay h-100">
                             <div class="text">
-                                <span class="auth-eyebrow">@lang('PROPHECY SPORTS')</span>
                                 <h2>@lang('Sign in to your account')</h2>
                                 <p>@lang('Pick up where you left off. Your bets and wallet are ready when you are.')</p>
                                 <a href="{{route('home')}}">@lang('back to home')</a>
