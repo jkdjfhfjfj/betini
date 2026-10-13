@@ -1,0 +1,2 @@
+<?php echo $__env->make($theme.'errors.403', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<?php /**PATH /home/runner/workspace/resources/views/errors/403.blade.php ENDPATH**/ ?>
