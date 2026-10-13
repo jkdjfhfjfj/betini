@@ -48,6 +48,9 @@ Route::get('rate-update', function () {
 
 Auth::routes(['verify' => true]);
 
+Route::get('/wallet/return/payza', 'WalletWebhookController@payzaReturn')->name('wallet.payza.return');
+Route::get('/wallet/return/paystack', 'WalletWebhookController@paystackReturn')->name('wallet.paystack.return');
+
 Route::group(['middleware' => ['guest']], function () {
     Route::get('register/{sponsor?}', 'Auth\RegisterController@sponsor')->name('register.sponsor');
 });
@@ -72,6 +75,12 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'user', 'as' => 'user.'], fu
             Route::post('add-fund', 'PaymentController@addFundRequest')->name('addFund.request');
             Route::get('addFundConfirm', 'PaymentController@depositConfirm')->name('addFund.confirm');
             Route::post('addFundConfirm', 'PaymentController@fromSubmit')->name('addFund.fromSubmit');
+            Route::get('/wallet', 'User\WalletController@index')->name('wallet');
+            Route::post('/wallet/currency', 'User\WalletController@updateCurrency')->name('wallet.currency');
+            Route::post('/wallet/deposit', 'User\WalletController@deposit')->name('wallet.deposit');
+            Route::post('/wallet/withdraw', 'User\WalletController@withdraw')->name('wallet.withdraw');
+            Route::get('/wallet/payout-methods', 'User\WalletController@payoutMethods')->name('wallet.payout-methods');
+            Route::get('/wallet/status/{reference}', 'User\WalletController@status')->name('wallet.status');
 
 
             //transaction
@@ -150,6 +159,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
 
     Route::group(['middleware' => ['auth:admin', 'permission']], function () {
         Route::get('/dashboard', 'Admin\DashboardController@dashboard')->name('dashboard');
+        Route::get('wallet-providers', 'Admin\WalletProviderController@index')->name('wallet-providers');
+        Route::post('wallet-providers', 'Admin\WalletProviderController@save')->name('wallet-providers.save');
+        Route::post('wallet-providers/payhero-channel', 'Admin\WalletProviderController@registerPayHeroChannel')->name('wallet-providers.register-channel');
 
         Route::get('/staff', 'Admin\ManageRolePermissionController@staff')->name('staff');
         Route::post('/staff', 'Admin\ManageRolePermissionController@storeStaff')->name('storeStaff');

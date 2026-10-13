@@ -57,29 +57,40 @@ class HomeController extends Controller
      */
     public function index()
     {
+        $currencyService = app(\App\Services\CurrencyService::class);
+        $currencyService->initializeUser($this->user);
+        $walletCurrency = strtoupper($this->user->wallet_currency ?: 'USD');
+
         $data['betInvests'] = BetInvest::with('betInvestLog')->where('user_id', $this->user->id)->orderBy('id', 'desc')->limit(6)->get();
-        $data['userBet'] = collect(BetInvest::with('betInvestLog')->where('user_id', $this->user->id)
-            ->selectRaw('SUM(CASE WHEN status != 2 THEN invest_amount END) as totalInvest')
-            ->selectRaw('SUM(CASE WHEN status = 1 THEN return_amount END) as totalReturn')
-            ->selectRaw('COUNT(CASE WHEN status = 1 THEN id END) AS win')
-            ->selectRaw('COUNT(CASE WHEN status != 2 THEN id END) AS totalBet')
-            ->orderBy('id', 'desc')
-            ->get()->toArray())->collapse();
+        $allBets = BetInvest::where('user_id', $this->user->id)->get();
+        $data['userBet'] = [
+            'totalInvest' => round($allBets->where('status', '!=', 2)->sum(function ($bet) use ($currencyService, $walletCurrency) {
+                return $currencyService->convert($bet->invest_amount, $bet->wallet_currency ?: 'USD', $walletCurrency);
+            }), 2),
+            'totalReturn' => round($allBets->where('status', 1)->sum(function ($bet) use ($currencyService, $walletCurrency) {
+                return $currencyService->convert($bet->return_amount, $bet->wallet_currency ?: 'USD', $walletCurrency);
+            }), 2),
+            'win' => $allBets->where('status', 1)->count(),
+            'totalBet' => $allBets->where('status', '!=', 2)->count(),
+        ];
 
         $dailyPayout = $this->dayList();
 
         BetInvest::where('user_id', $this->user->id)
             ->whereMonth('created_at', Carbon::now()->month)
-            ->select(
-                DB::raw('SUM(invest_amount) as totalInvest'),
-                DB::raw('DATE_FORMAT(created_at,"Day %d") as date')
-            )
-            ->groupBy(DB::raw("DATE(created_at)"))
-            ->get()->map(function ($item) use ($dailyPayout) {
-                $dailyPayout->put($item['date'], round($item['totalInvest'], 2));
+            ->get()
+            ->groupBy(function ($item) {
+                return Carbon::parse($item->created_at)->format('\D\a\y d');
+            })
+            ->each(function ($items, $day) use ($dailyPayout, $currencyService, $walletCurrency) {
+                $dailyPayout->put($day, round($items->sum(function ($item) use ($currencyService, $walletCurrency) {
+                    return $currencyService->convert($item->invest_amount, $item->wallet_currency ?: 'USD', $walletCurrency);
+                }), 2));
             });
 
         $data['dailyPayout'] = $dailyPayout;
+        $data['walletCurrency'] = $walletCurrency;
+        $data['walletCurrencySymbol'] = $currencyService->symbol($walletCurrency);
         return view($this->theme . 'user.dashboard', $data);
     }
 
@@ -165,11 +176,7 @@ class HomeController extends Controller
         if (session()->get('plan_id') != null) {
             return redirect(route('user.payment'));
         }
-
-        $data['totalPayment'] = null;
-        $data['gateways'] = Gateway::where('status', 1)->orderBy('sort_by', 'ASC')->get();
-
-        return view($this->theme . 'user.addFund', $data);
+        return redirect()->route('user.wallet');
     }
 
 
@@ -371,9 +378,7 @@ class HomeController extends Controller
      */
     public function payoutMoney()
     {
-        $data['title'] = "Payout Money";
-        $data['gateways'] = PayoutMethod::whereStatus(1)->get();
-        return view($this->theme . 'user.payout.money', $data);
+        return redirect()->route('user.wallet');
     }
 
     public function payoutMoneyRequest(Request $request)
@@ -1072,9 +1077,19 @@ class HomeController extends Controller
     public function betSlip(Request $request)
     {
         $basic = (object)config('basic');
+        $currencyService = app(\App\Services\CurrencyService::class);
+        $user = $currencyService->initializeUser($this->user);
+        $walletCurrency = strtoupper($user->wallet_currency ?: 'USD');
+
+        try {
+            $minimumBet = $currencyService->convert($basic->minimum_bet, 'USD', $walletCurrency);
+            $walletRate = $currencyService->rateSnapshot($walletCurrency);
+        } catch (\Throwable $exception) {
+            return response()->json(['errors' => ['amount' => ['The exchange rate for ' . $walletCurrency . ' is unavailable. Please contact support before placing a bet.']]]);
+        }
 
         $validator = Validator::make($request->all(), [
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|gt:0',
             'activeSlip' => 'required',
             'activeSlip.*' => 'required',
         ], [
@@ -1085,8 +1100,6 @@ class HomeController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->messages()]);
         }
-        $user = $this->user;
-
 
         $idCollection = collect($request->activeSlip)->pluck('id');
 
@@ -1094,8 +1107,8 @@ class HomeController extends Controller
         if ($user->balance < $requestAmount) {
             return response()->json(['errors' => ['amount' => ['Insufficient Balance']]]);
         }
-        if ($basic->minimum_bet > $requestAmount) {
-            return response()->json(['errors' => ['amount' => ["Minimum  Amount $basic->minimum_bet $basic->currency_symbol need!"]]]);
+        if ($minimumBet > $requestAmount) {
+            return response()->json(['errors' => ['amount' => ["Minimum amount is $minimumBet " . $currencyService->symbol($walletCurrency) . " ($walletCurrency)."]]]);
         }
 
 
@@ -1149,55 +1162,66 @@ class HomeController extends Controller
             ]);
         }
 
-        DB::beginTransaction();
+        $betResult = DB::transaction(function () use ($user, $requestAmount, $walletCurrency, $walletRate, $newSlip, $getRatio, $basic) {
+            $lockedUser = \App\Models\User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            if (strtoupper($lockedUser->wallet_currency ?: 'USD') !== $walletCurrency) {
+                return ['error' => 'Your wallet currency changed. Refresh and submit the bet again.'];
+            }
+            if ((float)$lockedUser->balance < (float)$requestAmount) {
+                return ['error' => 'Insufficient available balance.'];
+            }
 
-        $user->balance -= round($requestAmount, 2);
-        $user->save();
+            $lockedUser->balance = round((float)$lockedUser->balance - (float)$requestAmount, 2);
+            $lockedUser->save();
 
+            $title = 'Bet in ' . count($newSlip) . ' Matches By Bet slip';
+            $trx = strRandom();
+            BasicService::makeTransaction($lockedUser, getAmount($requestAmount), getAmount(0), '-', $trx, $title);
 
-        $title = 'Bet in ' . count($newSlip) . ' Matches By Bet slip';
-        $trx = strRandom();
-        BasicService::makeTransaction($user, getAmount($requestAmount), getAmount(0), '-', $trx, $title);
+            $invest = new BetInvest();
+            $invest->transaction_id = strRandom();
+            $invest->user_id = $lockedUser->id;
+            $invest->creator_id = null;
+            $invest->invest_amount = $requestAmount;
+            $invest->return_amount = round(($requestAmount * $getRatio), 2);
+            $invest->charge = 0;
+            $invest->remaining_balance = $lockedUser->balance;
+            $invest->wallet_currency = $walletCurrency;
+            $invest->usd_rate = $walletRate;
+            $invest->ratio = round($getRatio, 3);
+            $invest->status = 0;
+            $invest->isMultiBet = (count($newSlip) == 1) ? 0 : 1;
+            $invest->save();
 
-        $finalRatioReturnAmo = round(($requestAmount * $getRatio), 2);
+            $newSlip->each(function ($item) use ($invest, $lockedUser) {
+                $betInv = new BetInvestLog();
+                $betInv->bet_invest_id = $invest->id;
+                $betInv->user_id = $lockedUser->id;
+                $betInv->match_id = $item['match_id'];
+                $betInv->question_id = $item['question_id'];
+                $betInv->bet_option_id = $item['id'];
+                $betInv->ratio = $item['ratio'];
+                $betInv->category_icon = $item['category_icon'];
+                $betInv->category_name = $item['category_name'];
+                $betInv->tournament_name = $item['tournament_name'];
+                $betInv->match_name = $item['match_name'];
+                $betInv->question_name = $item['question_name'];
+                $betInv->option_name = $item['option_name'];
+                $betInv->status = 0;
+                $betInv->save();
+            });
 
-        $invest = new BetInvest();
-        $invest->transaction_id = strRandom();
-        $invest->user_id = $user->id;
-        $invest->creator_id = null;
-        $invest->invest_amount = $requestAmount;
-        $invest->return_amount = $finalRatioReturnAmo;
-        $invest->charge = 0;
-        $invest->remaining_balance = $user->balance;
-        $invest->ratio = round($getRatio, 3);
-        $invest->status = 0;
-        $invest->isMultiBet = (count($newSlip) == 1) ? 0 : 1;
-        $invest->save();
+            if ($basic->bet_commission == 1) {
+                BasicService::setBonus($lockedUser, getAmount($requestAmount), 'bet_invest');
+            }
 
-        $newSlip->map(function ($item) use ($invest, $user) {
-            $betInv = new BetInvestLog();
-            $betInv->bet_invest_id = $invest->id;
-            $betInv->user_id = $user->id;
-            $betInv->match_id = $item['match_id'];
-            $betInv->question_id = $item['question_id'];
-            $betInv->bet_option_id = $item['id'];
-            $betInv->ratio = $item['ratio'];
-            $betInv->category_icon = $item['category_icon'];
-            $betInv->category_name = $item['category_name'];
-            $betInv->tournament_name = $item['tournament_name'];
-            $betInv->match_name = $item['match_name'];
-            $betInv->question_name = $item['question_name'];
-            $betInv->option_name = $item['option_name'];
-            $betInv->status = 0;
-            $betInv->save();
+            return ['success' => true];
         });
 
-
-        if ($basic->bet_commission == 1) {
-            BasicService::setBonus($user, getAmount($requestAmount), 'bet_invest');
+        if (isset($betResult['error'])) {
+            return response()->json(['errors' => ['amount' => [$betResult['error']]]]);
         }
 
-        DB::commit();
         return response()->json(['success' => true]);
 
 

@@ -19,10 +19,10 @@
                         <div class="row my-3">
                             <div class="form-group col-sm-4 col-12">
                                 <label for="currency_layer_access_key">@lang('Currency Layer Access Key')</label>
-                                <input type="text" name="currency_layer_access_key"
-                                       value="{{ old('currency_layer_access_key',$basicControl->currency_layer_access_key) }}"
-                                       placeholder="@lang('Enter your currency layer access key')"
+                                <input type="password" name="currency_layer_access_key" autocomplete="new-password"
+                                       placeholder="Leave blank to keep the saved key"
                                        class="form-control @error('currency_layer_access_key') is-invalid @enderror">
+                                <small class="text-muted">{{ $basicControl->currency_layer_access_key ? 'Key is configured.' : 'No key is configured.' }}</small>
                                 @error('currency_layer_access_key')
                                 <span class="text-danger">{{ trans($message) }}</span>
                                 @enderror
@@ -70,10 +70,10 @@
                         <div class="row my-3">
                             <div class="form-group col-sm-4 col-12">
                                 <label for="coin_market_cap_app_key">@lang('Coin Market Cap App Key')</label>
-                                <input type="text" name="coin_market_cap_app_key"
-                                       value="{{ old('coin_market_cap_app_key',$basicControl->coin_market_cap_app_key) }}"
-                                       placeholder="@lang('Enter your coin market cap app key')"
+                                <input type="password" name="coin_market_cap_app_key" autocomplete="new-password"
+                                       placeholder="Leave blank to keep the saved key"
                                        class="form-control @error('coin_market_cap_app_key') is-invalid @enderror">
+                                <small class="text-muted">{{ $basicControl->coin_market_cap_app_key ? 'Key is configured.' : 'No key is configured.' }}</small>
                                 @error('coin_market_cap_app_key')
                                 <span class="text-danger">{{ trans($message) }}</span>
                                 @enderror

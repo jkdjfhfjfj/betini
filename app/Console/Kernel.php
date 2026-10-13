@@ -7,6 +7,8 @@ use App\Console\Commands\BlockIoIPN;
 use App\Console\Commands\Cron;
 use App\Console\Commands\PayoutCryptoCurrencyUpdateCron;
 use App\Console\Commands\PayoutCurrencyUpdateCron;
+use App\Console\Commands\WalletCurrencyRateUpdate;
+use App\Console\Commands\WalletPayoutStatusSync;
 use App\Models\Gateway;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -24,6 +26,8 @@ class Kernel extends ConsoleKernel
         BinanceGetStatus::class,
         PayoutCryptoCurrencyUpdateCron::class,
         PayoutCurrencyUpdateCron::class,
+        WalletCurrencyRateUpdate::class,
+        WalletPayoutStatusSync::class,
     ];
 
     /**
@@ -39,6 +43,8 @@ class Kernel extends ConsoleKernel
         if ($basicControl->currency_layer_auto_update == 1) {
             $schedule->command('payout-currency:update')
                 ->{basicControl()->currency_layer_auto_update_at}();
+            $schedule->command('wallet:rates:update')
+                ->{basicControl()->currency_layer_auto_update_at}();
         }
         if ($basicControl->coin_market_cap_auto_update == 1) {
             $schedule->command('payout-crypto-currency:update')->{basicControl()->coin_market_cap_auto_update_at}();
@@ -51,6 +57,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('cron:status')->hourly();
         $schedule->command('payout-status:update')->everyFiveMinutes();
+        $schedule->command('wallet:payouts:sync')->everyFiveMinutes();
     }
 
     /**

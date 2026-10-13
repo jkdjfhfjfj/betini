@@ -57,15 +57,30 @@
 
     @endphp
 
+    @php
+        $betCurrency = auth()->check() ? strtoupper(auth()->user()->wallet_currency ?: 'USD') : strtoupper(config('basic.currency', 'USD'));
+        $betCurrencySymbol = auth()->check()
+            ? app(\App\Services\CurrencyService::class)->symbol($betCurrency)
+            : config('basic.currency_symbol');
+        $minimumBetForCurrency = config('basic.minimum_bet');
+        if (auth()->check()) {
+            try {
+                $minimumBetForCurrency = app(\App\Services\CurrencyService::class)->convert(config('basic.minimum_bet'), 'USD', $betCurrency);
+            } catch (\Throwable $exception) {
+                // The betting endpoint returns an explicit error until the missing exchange rate is configured.
+            }
+        }
+    @endphp
+
     <script>
         let getMatchList = new Vue({
             el: "#getMatchList",
             data: {
 
                 loaded: true,
-                currency_symbol: "{{config('basic.currency_symbol')}}",
-                currency: "{{config('basic.currency')}}",
-                minimum_bet: "{{config('basic.minimum_bet')}}",
+                currency_symbol: "{{ $betCurrencySymbol }}",
+                currency: "{{ $betCurrency }}",
+                minimum_bet: "{{ $minimumBetForCurrency }}",
                 allSports_filter: [],
                 upcoming_filter: [],
 

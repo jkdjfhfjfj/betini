@@ -18,3 +18,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 Route::post('payout/{code}', 'Admin\PayoutRecordController@payout')->name('payout');
+Route::post('wallet/callback/payhero', 'WalletWebhookController@payhero')->name('wallet.payhero.webhook');
+Route::post('wallet/callback/payza', 'WalletWebhookController@payza')->name('wallet.payza.webhook');
+Route::post('wallet/callback/paystack', 'WalletWebhookController@paystack')->name('wallet.paystack.webhook');

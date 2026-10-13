@@ -11,6 +11,27 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "DATABASE_URL='' DB_CONNECTION=sqlite DB_DATABASE=/tmp/wallet-preview.sqlite APP_CONFIG_CACHE=/tmp/wallet-preview-config.php APP_ENV=local APP_DEBUG=false CACHE_DRIVER=file SESSION_DRIVER=file bash -c 'touch \"$DB_DATABASE\"; exec php -S 0.0.0.0:${PORT:-5000} server.php'"
+waitForPort = 5000
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true

@@ -162,6 +162,7 @@ class RegisterController extends Controller
             'country_code' => $data['country_code'],
             'phone_code' => $data['phone_code'],
             'phone' => $data['phone'],
+            'wallet_currency' => app(\App\Services\CurrencyService::class)->currencyForCountry($data['country_code'] ?? null),
             'password' => Hash::make($data['password']),
             'email_verification' => ($basic->email_verification) ? 0 : 1,
             'sms_verification' => ($basic->sms_verification) ? 0 : 1,

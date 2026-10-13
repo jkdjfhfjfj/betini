@@ -171,7 +171,7 @@ class BasicService
      * @param $trx_id
      * @param $remarks
      */
-    public function makeTransaction($user, $amount, $charge, $trx_type = null, $trx_id, $remarks = null): void
+    public function makeTransaction($user, $amount, $charge, $trx_type = null, $trx_id = null, $remarks = null): void
     {
         $transaction = new Transaction();
         $transaction->user_id = $user->id;
@@ -179,8 +179,24 @@ class BasicService
         $transaction->charge = $charge;
         $transaction->trx_type = $trx_type;
         $transaction->final_balance = $user->balance;
-        $transaction->trx_id = $trx_id;
+        $transaction->trx_id = $trx_id ?: strRandom();
         $transaction->remarks = $remarks;
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('transactions', 'wallet_currency')) {
+                $transaction->wallet_currency = strtoupper($user->wallet_currency ?: 'USD');
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn('transactions', 'usd_rate')) {
+                $currency = strtoupper($user->wallet_currency ?: 'USD');
+                $transaction->usd_rate = $currency === 'USD'
+                    ? 1
+                    : app(\App\Services\CurrencyService::class)->rateFor($currency);
+            }
+        } catch (\Throwable $exception) {
+            // Existing installations can continue using their legacy transaction schema until the manual SQL is applied.
+            if (isset($transaction->usd_rate)) {
+                $transaction->usd_rate = null;
+            }
+        }
         $transaction->save();
     }
 

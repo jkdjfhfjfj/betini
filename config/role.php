@@ -167,13 +167,16 @@ $arr = [
             'view' => [
                 'admin.payment.methods',
                 'admin.deposit.manual.index',
+                'admin.wallet-providers',
             ],
             'add' => [
-                'admin.deposit.manual.create'
+                'admin.deposit.manual.create',
+                'admin.wallet-providers.register-channel',
             ],
             'edit' => [
                 'admin.edit.payment.methods',
-                'admin.deposit.manual.edit'
+                'admin.deposit.manual.edit',
+                'admin.wallet-providers.save',
             ],
             'delete' => [],
         ],

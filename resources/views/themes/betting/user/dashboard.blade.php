@@ -6,7 +6,7 @@
         <div class="col-xl-3 col-lg-4 col-md-3 col-sm-10 mb-2">
             <div class="dashboard__card">
                 <div class="dashboard__card-content">
-                    <h2 class="price"><sup>{{config('basic.currency_symbol')}}</sup>{{Auth()->user()->balance}}</h2>
+                    <h2 class="price"><sup>{{ $walletCurrencySymbol }}</sup>{{Auth()->user()->balance}}</h2>
                     <p class="info">@lang('Total Balance')</p>
                 </div>
                 <div class="dashboard__card-icon">
@@ -17,7 +17,7 @@
         <div class="col-xl-3 col-lg-4 col-md-3 col-sm-10 mb-2">
             <div class="dashboard__card">
                 <div class="dashboard__card-content">
-                    <h2 class="price"><sup>{{config('basic.currency_symbol')}}</sup>{{$userBet['totalInvest']}}</h2>
+                    <h2 class="price"><sup>{{ $walletCurrencySymbol }}</sup>{{$userBet['totalInvest']}}</h2>
                     <p class="info">@lang('Total Bet Amount')</p>
                 </div>
                 <div class="dashboard__card-icon">
@@ -73,9 +73,9 @@
                             @forelse($betInvests as $key => $item)
                                 <tr>
                                     <td data-label="@lang('SL No.')">{{++$key}}</td>
-                                    <td data-label="@lang('Invest Amount')">{{config('basic.currency_symbol')}}@lang($item->invest_amount)</td>
-                                    <td data-label="@lang('Return Amount')">{{config('basic.currency_symbol')}}@lang($item->return_amount)</td>
-                                    <td data-label="@lang('Charge')">{{config('basic.currency_symbol')}}@lang($item->charge)</td>
+                                    <td data-label="@lang('Invest Amount')">{{data_get(config('currencies.supported'), ($item->wallet_currency ?: 'USD').'.symbol', $item->wallet_currency ?: 'USD')}}@lang($item->invest_amount)</td>
+                                    <td data-label="@lang('Return Amount')">{{data_get(config('currencies.supported'), ($item->wallet_currency ?: 'USD').'.symbol', $item->wallet_currency ?: 'USD')}}@lang($item->return_amount)</td>
+                                    <td data-label="@lang('Charge')">{{data_get(config('currencies.supported'), ($item->wallet_currency ?: 'USD').'.symbol', $item->wallet_currency ?: 'USD')}}@lang($item->charge)</td>
                                     <td data-label="@lang('Ratio')"> @lang($item->ratio)</td>
                                     <td data-label="@lang('Status')" class="text-center">
                                         @if($item->status == 0)
@@ -242,7 +242,7 @@
                 colors: ['#000'],
                 y: {
                     formatter: function (val) {
-                        return val + " {{config('basic.currency')}}"
+                        return val + " {{ $walletCurrency }}"
                     }
                 }
             }

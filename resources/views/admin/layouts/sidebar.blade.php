@@ -170,6 +170,12 @@
                             <span class="hide-menu">@lang('Payment Methods')</span>
                         </a>
                     </li>
+                    <li class="sidebar-item {{menuActive(['admin.wallet-providers*'],3)}}">
+                        <a class="sidebar-link" href="{{route('admin.wallet-providers')}}" aria-expanded="false">
+                            <i class="fas fa-wallet text-info"></i>
+                            <span class="hide-menu">@lang('Wallet Providers & Routing')</span>
+                        </a>
+                    </li>
                     <li class="sidebar-item {{menuActive(['admin.deposit.manual.index','admin.deposit.manual.create','admin.deposit.manual.edit'],3)}}">
                         <a class="sidebar-link" href="{{route('admin.deposit.manual.index')}}"
                            aria-expanded="false">

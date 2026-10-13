@@ -98,7 +98,7 @@
                                     <span class="text-danger mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
-                                <input type="hidden" name="country_code" value="{{old('country_code')}}"
+                                <input type="hidden" name="country_code" value="{{old('country_code', $country_code)}}"
                                        class="text-dark">
                                 <div class="input-box col-6">
                                     <input
@@ -150,8 +150,9 @@
             });
 
             function setDialCode() {
-                let currency = $('.dialCode-change').val();
-                $('.dialcode-set').val(currency);
+                let selected = $('.dialCode-change option:selected');
+                $('.dialcode-set').val(selected.val());
+                $('input[name="country_code"]').val(selected.data('code') || '');
             }
 
         });

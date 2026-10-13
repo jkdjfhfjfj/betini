@@ -25,9 +25,9 @@
                             @forelse($betInvests as $key => $item)
                                 <tr>
                                     <td data-label="@lang('SL No.')">{{++$key}}</td>
-                                    <td data-label="@lang('Invest Amount')">{{config('basic.currency_symbol')}}@lang($item->invest_amount)</td>
-                                    <td data-label="@lang('Return Amount')">{{config('basic.currency_symbol')}}@lang($item->return_amount)</td>
-                                    <td data-label="@lang('Charge')">{{config('basic.currency_symbol')}}@lang($item->charge)</td>
+                                    <td data-label="@lang('Invest Amount')">{{data_get(config('currencies.supported'), ($item->wallet_currency ?: 'USD').'.symbol', $item->wallet_currency ?: 'USD')}}@lang($item->invest_amount) {{ $item->wallet_currency ?: 'USD' }}</td>
+                                    <td data-label="@lang('Return Amount')">{{data_get(config('currencies.supported'), ($item->wallet_currency ?: 'USD').'.symbol', $item->wallet_currency ?: 'USD')}}@lang($item->return_amount) {{ $item->wallet_currency ?: 'USD' }}</td>
+                                    <td data-label="@lang('Charge')">{{data_get(config('currencies.supported'), ($item->wallet_currency ?: 'USD').'.symbol', $item->wallet_currency ?: 'USD')}}@lang($item->charge) {{ $item->wallet_currency ?: 'USD' }}</td>
                                     <td data-label="@lang('Ratio')"> @lang($item->ratio)</td>
                                     <td data-label="@lang('Status')" class="text-center">
                                         @if($item->status == 0)

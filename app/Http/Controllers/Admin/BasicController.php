@@ -362,10 +362,14 @@ class BasicController extends Controller
             }
 
             $purifiedData = (object)$purifiedData;
-            $basicControl->currency_layer_access_key = $purifiedData->currency_layer_access_key;
+            if (!empty($purifiedData->currency_layer_access_key)) {
+                $basicControl->currency_layer_access_key = trim($purifiedData->currency_layer_access_key);
+            }
             $basicControl->currency_layer_auto_update = $purifiedData->currency_layer_auto_update;
             $basicControl->currency_layer_auto_update_at = $purifiedData->currency_layer_auto_update_at;
-            $basicControl->coin_market_cap_app_key = $purifiedData->coin_market_cap_app_key;
+            if (!empty($purifiedData->coin_market_cap_app_key)) {
+                $basicControl->coin_market_cap_app_key = trim($purifiedData->coin_market_cap_app_key);
+            }
             $basicControl->coin_market_cap_auto_update = $purifiedData->coin_market_cap_auto_update;
             $basicControl->coin_market_cap_auto_update_at = $purifiedData->coin_market_cap_auto_update_at;
             $basicControl->save();
