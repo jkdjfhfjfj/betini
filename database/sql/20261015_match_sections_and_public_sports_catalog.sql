@@ -101,18 +101,19 @@ PREPARE add_team_category_foreign_key FROM @ddl;
 EXECUTE add_team_category_foreign_key;
 DEALLOCATE PREPARE add_team_category_foreign_key;
 
+-- game_categories stores name/icon/status (it has no slug column in the app schema).
 -- Create standard sport categories without overwriting admin-edited records.
 INSERT INTO `game_categories`
-    (`name`, `slug`, `icon`, `status`, `created_at`, `updated_at`)
-SELECT seeded.`name`, seeded.`slug`, seeded.`icon`, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    (`name`, `icon`, `status`, `created_at`, `updated_at`)
+SELECT seeded.`name`, seeded.`icon`, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 FROM (
-    SELECT 'Football' AS `name`, 'football' AS `slug`,
+    SELECT 'Football' AS `name`,
            '<i class="fas fa-futbol" aria-hidden="true"></i>' AS `icon`
-    UNION ALL SELECT 'Cricket', 'cricket',
+    UNION ALL SELECT 'Cricket',
            '<i class="fas fa-cricket" aria-hidden="true"></i>'
-    UNION ALL SELECT 'Basketball', 'basketball',
+    UNION ALL SELECT 'Basketball',
            '<i class="fas fa-basketball" aria-hidden="true"></i>'
-    UNION ALL SELECT 'Rugby', 'rugby',
+    UNION ALL SELECT 'Rugby',
            '<i class="fas fa-football" aria-hidden="true"></i>'
 ) AS seeded
 WHERE NOT EXISTS (
@@ -120,45 +121,46 @@ WHERE NOT EXISTS (
     WHERE LOWER(TRIM(current_category.`name`)) = LOWER(TRIM(seeded.`name`))
 );
 
+-- game_tournaments stores category_id/name/status (it has no slug column).
 -- A practical starter competition list: African domestic and continental
 -- competitions plus widely followed international leagues.
 INSERT INTO `game_tournaments`
-    (`category_id`, `name`, `slug`, `status`, `created_at`, `updated_at`)
-SELECT category.`id`, seeded.`name`, seeded.`slug`, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    (`category_id`, `name`, `status`, `created_at`, `updated_at`)
+SELECT category.`id`, seeded.`name`, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 FROM (
-    SELECT 'Football' AS `category_name`, 'English Premier League' AS `name`, 'english-premier-league' AS `slug`
-    UNION ALL SELECT 'Football', 'Spanish LaLiga', 'spanish-laliga'
-    UNION ALL SELECT 'Football', 'Italian Serie A', 'italian-serie-a'
-    UNION ALL SELECT 'Football', 'German Bundesliga', 'german-bundesliga'
-    UNION ALL SELECT 'Football', 'French Ligue 1', 'french-ligue-1'
-    UNION ALL SELECT 'Football', 'UEFA Champions League', 'uefa-champions-league'
-    UNION ALL SELECT 'Football', 'CAF Champions League', 'caf-champions-league'
-    UNION ALL SELECT 'Football', 'CAF Confederation Cup', 'caf-confederation-cup'
-    UNION ALL SELECT 'Football', 'FKF Premier League', 'fkf-premier-league'
-    UNION ALL SELECT 'Football', 'Tanzanian Premier League', 'tanzanian-premier-league'
-    UNION ALL SELECT 'Football', 'Uganda Premier League', 'uganda-premier-league'
-    UNION ALL SELECT 'Football', 'South African Premiership', 'south-african-premiership'
-    UNION ALL SELECT 'Football', 'Nigeria Premier Football League', 'nigeria-premier-football-league'
-    UNION ALL SELECT 'Football', 'Ghana Premier League', 'ghana-premier-league'
-    UNION ALL SELECT 'Football', 'Egyptian Premier League', 'egyptian-premier-league'
-    UNION ALL SELECT 'Football', 'Botola Pro', 'botola-pro'
-    UNION ALL SELECT 'Football', 'Major League Soccer', 'major-league-soccer'
-    UNION ALL SELECT 'Football', 'Saudi Pro League', 'saudi-pro-league'
-    UNION ALL SELECT 'Football', 'Campeonato Brasileiro Serie A', 'campeonato-brasileiro-serie-a'
-    UNION ALL SELECT 'Football', 'J1 League', 'j1-league'
-    UNION ALL SELECT 'Cricket', 'ICC Men''s T20 Internationals', 'icc-mens-t20-internationals'
-    UNION ALL SELECT 'Cricket', 'Indian Premier League', 'indian-premier-league'
-    UNION ALL SELECT 'Cricket', 'Pakistan Super League', 'pakistan-super-league'
-    UNION ALL SELECT 'Cricket', 'Big Bash League', 'big-bash-league'
-    UNION ALL SELECT 'Cricket', 'SA20', 'sa20'
-    UNION ALL SELECT 'Cricket', 'Caribbean Premier League', 'caribbean-premier-league'
-    UNION ALL SELECT 'Basketball', 'NBA', 'nba'
-    UNION ALL SELECT 'Basketball', 'EuroLeague', 'euroleague'
-    UNION ALL SELECT 'Basketball', 'Basketball Africa League', 'basketball-africa-league'
-    UNION ALL SELECT 'Rugby', 'Rugby Africa Cup', 'rugby-africa-cup'
-    UNION ALL SELECT 'Rugby', 'Six Nations Championship', 'six-nations-championship'
-    UNION ALL SELECT 'Rugby', 'United Rugby Championship', 'united-rugby-championship'
-    UNION ALL SELECT 'Rugby', 'Super Rugby Pacific', 'super-rugby-pacific'
+    SELECT 'Football' AS `category_name`, 'English Premier League' AS `name`
+    UNION ALL SELECT 'Football', 'Spanish LaLiga'
+    UNION ALL SELECT 'Football', 'Italian Serie A'
+    UNION ALL SELECT 'Football', 'German Bundesliga'
+    UNION ALL SELECT 'Football', 'French Ligue 1'
+    UNION ALL SELECT 'Football', 'UEFA Champions League'
+    UNION ALL SELECT 'Football', 'CAF Champions League'
+    UNION ALL SELECT 'Football', 'CAF Confederation Cup'
+    UNION ALL SELECT 'Football', 'FKF Premier League'
+    UNION ALL SELECT 'Football', 'Tanzanian Premier League'
+    UNION ALL SELECT 'Football', 'Uganda Premier League'
+    UNION ALL SELECT 'Football', 'South African Premiership'
+    UNION ALL SELECT 'Football', 'Nigeria Premier Football League'
+    UNION ALL SELECT 'Football', 'Ghana Premier League'
+    UNION ALL SELECT 'Football', 'Egyptian Premier League'
+    UNION ALL SELECT 'Football', 'Botola Pro'
+    UNION ALL SELECT 'Football', 'Major League Soccer'
+    UNION ALL SELECT 'Football', 'Saudi Pro League'
+    UNION ALL SELECT 'Football', 'Campeonato Brasileiro Serie A'
+    UNION ALL SELECT 'Football', 'J1 League'
+    UNION ALL SELECT 'Cricket', 'ICC Men''s T20 Internationals'
+    UNION ALL SELECT 'Cricket', 'Indian Premier League'
+    UNION ALL SELECT 'Cricket', 'Pakistan Super League'
+    UNION ALL SELECT 'Cricket', 'Big Bash League'
+    UNION ALL SELECT 'Cricket', 'SA20'
+    UNION ALL SELECT 'Cricket', 'Caribbean Premier League'
+    UNION ALL SELECT 'Basketball', 'NBA'
+    UNION ALL SELECT 'Basketball', 'EuroLeague'
+    UNION ALL SELECT 'Basketball', 'Basketball Africa League'
+    UNION ALL SELECT 'Rugby', 'Rugby Africa Cup'
+    UNION ALL SELECT 'Rugby', 'Six Nations Championship'
+    UNION ALL SELECT 'Rugby', 'United Rugby Championship'
+    UNION ALL SELECT 'Rugby', 'Super Rugby Pacific'
 ) AS seeded
 JOIN `game_categories` category
   ON LOWER(TRIM(category.`name`)) = LOWER(TRIM(seeded.`category_name`))
