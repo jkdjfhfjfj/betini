@@ -3,3 +3,4 @@
 - [Isolated Laravel database checks](isolated-laravel-database.md) — local SQLite commands must explicitly clear `DATABASE_URL`, which can override `DB_CONNECTION`.
 - [Tracked Blade view caches](tracked-blade-view-caches.md) — restoring committed compiled views can make them appear newer than edited templates, leaving the preview stale.
 - [PayzaAPI contract](payzaapi-contract.md) — use hosted checkout and signed payment events; reconcile payouts via documented status polling unless Payza confirms another contract.
+- [FTP asset parity](ftp-asset-parity.md) — when the live Blade markup looks current but the page styling differs, compare the deployed CSS with the workspace file before changing UI rules.
