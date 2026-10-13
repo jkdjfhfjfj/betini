@@ -50,20 +50,36 @@ function getFile($image, $clean = '')
         return asset(config('location.default'));
     }
 
-    clearstatcache(true, $image);
+    $filePath = base_path($image);
+    clearstatcache(true, $filePath);
 
-    if (!file_exists($image) || !is_file($image)) {
+    if (!file_exists($filePath) || !is_file($filePath)) {
         return asset(config('location.default'));
     }
 
     $url = asset($image);
     if ($clean === '') {
-        $modifiedAt = @filemtime($image);
-        $fileSize = @filesize($image);
+        $modifiedAt = @filemtime($filePath);
+        $fileSize = @filesize($filePath);
 
         if ($modifiedAt !== false) {
             $separator = strpos($url, '?') === false ? '?' : '&';
             $version = $modifiedAt . ($fileSize !== false ? '-' . $fileSize : '');
+
+            // These fixed-name admin images can be replaced with files of the same size
+            // during the same second; a content hash guarantees a new public URL.
+            $normalizedImage = ltrim(str_replace('\\', '/', $image), '/');
+            if (in_array($normalizedImage, [
+                'assets/uploads/logo/banner.jpg',
+                'assets/uploads/logo/footer.jpg',
+                'assets/uploads/logo/loginImage.png',
+            ], true)) {
+                $contentHash = @hash_file('sha256', $filePath);
+                if ($contentHash !== false) {
+                    $version = $contentHash;
+                }
+            }
+
             $url .= $separator . 'v=' . rawurlencode($version);
         }
     }

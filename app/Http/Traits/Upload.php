@@ -23,7 +23,7 @@ trait Upload
             throw new \InvalidArgumentException('A valid image upload is required.');
         }
 
-        $location = rtrim($location, '/');
+        $location = rtrim(base_path(trim($location, '/\\')), '/\\');
         $path = $this->makeDirectory($location);
         if (!$path) throw new \RuntimeException('Upload directory could not be created.');
 
