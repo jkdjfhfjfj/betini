@@ -167,7 +167,7 @@
         }
     @endphp
 
-    <script src="{{ asset('assets/themes/betting/js/match-feed-filters.js') }}?v={{ filemtime(public_path('assets/themes/betting/js/match-feed-filters.js')) }}"></script>
+    <script src="{{ asset('assets/themes/betting/js/match-feed-filters.js') }}?v={{ filemtime(base_path('assets/themes/betting/js/match-feed-filters.js')) }}"></script>
     <script>
         let getMatchList = new Vue({
             el: "#getMatchList",
