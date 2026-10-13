@@ -155,6 +155,126 @@
             </div>
         </div>
 
+        @if($manualDepositGateways->isNotEmpty())
+            <div class="col-lg-6">
+                <div class="card secbg br-4 h-100">
+                    <div class="card-body">
+                        <h4>@lang('Manual deposit options') ({{ $currency }})</h4>
+                        <p class="text-muted">Follow the instructions, submit payment proof, and an administrator will review the deposit before crediting your wallet.</p>
+                        @foreach($manualDepositGateways as $manualGateway)
+                            <div class="manual-wallet-method border rounded p-3 mb-3">
+                                <h5>{{ $manualGateway->name }}</h5>
+                                <p class="text-muted mb-2">
+                                    @lang('Limits'): {{ $currencySymbol }} {{ number_format((float)$manualGateway->min_amount, 2) }}
+                                    – {{ $currencySymbol }} {{ number_format((float)$manualGateway->max_amount, 2) }} {{ $currency }}.
+                                    @lang('Fee'): {{ $currencySymbol }} {{ number_format((float)$manualGateway->fixed_charge, 2) }}
+                                    + {{ number_format((float)$manualGateway->percentage_charge, 2) }}%.
+                                </p>
+                                @if($manualGateway->manual_instruction_html)
+                                    <div class="manual-wallet-instructions mb-3">{!! $manualGateway->manual_instruction_html !!}</div>
+                                @endif
+
+                                <form class="manual-wallet-deposit-form" method="post"
+                                      action="{{ route('user.wallet.manual-deposit') }}"
+                                      enctype="multipart/form-data"
+                                      data-fixed-charge="{{ max(0, (float)$manualGateway->fixed_charge) }}"
+                                      data-percentage-charge="{{ max(0, (float)$manualGateway->percentage_charge) }}">
+                                    @csrf
+                                    <input type="hidden" name="gateway_id" value="{{ $manualGateway->id }}">
+                                    <div class="form-group mb-3">
+                                        <label for="manual_amount_{{ $manualGateway->id }}">@lang('Wallet credit amount') ({{ $currency }})</label>
+                                        <input id="manual_amount_{{ $manualGateway->id }}" class="form-control manual-wallet-amount"
+                                               type="number" name="amount" min="{{ max(0.01, (float)$manualGateway->min_amount) }}"
+                                               @if((float)$manualGateway->max_amount > 0) max="{{ (float)$manualGateway->max_amount }}" @endif
+                                               step="0.01" value="{{ old('amount') }}" required>
+                                    </div>
+                                    <p class="small text-muted">
+                                        @lang('Estimated payment total'):
+                                        <strong class="manual-wallet-total">{{ $currencySymbol }} {{ number_format((float)$manualGateway->min_amount + (float)$manualGateway->fixed_charge + ((float)$manualGateway->min_amount * (float)$manualGateway->percentage_charge / 100), 2) }} {{ $currency }}</strong>
+                                    </p>
+
+                                    @foreach(($manualGateway->parameters ?: []) as $fieldKey => $field)
+                                        @if(in_array($field->type ?? '', ['text', 'textarea', 'file'], true))
+                                            <div class="form-group mb-3">
+                                                <label for="manual_{{ $manualGateway->id }}_field_{{ $loop->index }}">
+                                                    {{ trans($field->field_level ?? 'Payment details') }}
+                                                    @if(($field->validation ?? '') === 'required') <span class="text-danger">*</span> @endif
+                                                </label>
+                                                @if($field->type === 'textarea')
+                                                    <textarea id="manual_{{ $manualGateway->id }}_field_{{ $loop->index }}"
+                                                              class="form-control"
+                                                              name="payment_fields[{{ $loop->index }}]"
+                                                              rows="3"
+                                                              @if(($field->validation ?? '') === 'required') required @endif></textarea>
+                                                @elseif($field->type === 'file')
+                                                    <input id="manual_{{ $manualGateway->id }}_field_{{ $loop->index }}"
+                                                           class="form-control" type="file"
+                                                           name="payment_fields[{{ $loop->index }}]"
+                                                           accept="image/jpeg,image/png"
+                                                           @if(($field->validation ?? '') === 'required') required @endif>
+                                                    <small class="text-muted">JPEG or PNG, up to 2 MB.</small>
+                                                @else
+                                                    <input id="manual_{{ $manualGateway->id }}_field_{{ $loop->index }}"
+                                                           class="form-control" type="text"
+                                                           name="payment_fields[{{ $loop->index }}]"
+                                                           maxlength="191"
+                                                           @if(($field->validation ?? '') === 'required') required @endif>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    @endforeach
+
+                                    <button class="btn-custom w-100" type="submit">@lang('Submit deposit for review')</button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <div class="col-lg-6">
+            <div class="card secbg br-4 h-100">
+                <div class="card-body">
+                    <h4>@lang('Manual withdrawal') ({{ $currency }})</h4>
+                    <p class="text-muted">An administrator will review this payout request. The amount is reserved now; rejected requests are refunded to this wallet.</p>
+                    <form method="post" action="{{ route('user.wallet.manual-withdraw') }}">
+                        @csrf
+                        <div class="form-group mb-3">
+                            <label for="manual_withdraw_amount">@lang('Amount') ({{ $currency }})</label>
+                            <input id="manual_withdraw_amount" class="form-control" type="number" name="amount"
+                                   min="0.01" step="0.01" value="{{ old('amount') }}" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="manual_payout_method">@lang('Preferred payout method')</label>
+                            <input id="manual_payout_method" class="form-control" name="payout_method" maxlength="100"
+                                   value="{{ old('payout_method') }}" placeholder="M-Pesa, bank transfer, or wallet" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="manual_account_name">@lang('Account name')</label>
+                            <input id="manual_account_name" class="form-control" name="account_name" maxlength="120"
+                                   value="{{ old('account_name', $user->fullname) }}" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="manual_account_number">@lang('Payment account or mobile number')</label>
+                            <input id="manual_account_number" class="form-control" name="account_number" maxlength="120"
+                                   value="{{ old('account_number') }}" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="manual_bank_name">@lang('Bank name (optional)')</label>
+                            <input id="manual_bank_name" class="form-control" name="bank_name" maxlength="120"
+                                   value="{{ old('bank_name') }}">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="manual_payment_notes">@lang('Additional payout details (optional)')</label>
+                            <textarea id="manual_payment_notes" class="form-control" name="payment_notes" rows="3" maxlength="500">{{ old('payment_notes') }}</textarea>
+                        </div>
+                        <button class="btn-custom w-100" type="submit">@lang('Request manual withdrawal')</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <div class="col-12">
             <div class="card secbg br-4">
                 <div class="card-body">
@@ -176,7 +296,7 @@
                                 <tr>
                                     <td>{{ $transaction->reference }}</td>
                                     <td>{{ ucfirst($transaction->direction) }}</td>
-                                    <td>{{ $transaction->provider === 'paystack' ? 'Card (Paystack)' : ucfirst($transaction->provider) }}</td>
+                                    <td>{{ $transaction->provider === 'paystack' ? 'Card (Paystack)' : ($transaction->provider === 'manual' ? 'Manual (admin review)' : ucfirst($transaction->provider)) }}</td>
                                     <td>{{ data_get($currencies, $transaction->currency_code . '.symbol', $transaction->currency_code) }} {{ number_format((float)$transaction->amount, 2) }} {{ $transaction->currency_code }}</td>
                                     <td>
                                         @if($transaction->status === 'succeeded')
@@ -203,6 +323,22 @@
 @endsection
 
 @push('script')
+    <script>
+        document.querySelectorAll('.manual-wallet-deposit-form').forEach(function (form) {
+            const amountInput = form.querySelector('.manual-wallet-amount');
+            const totalLabel = form.querySelector('.manual-wallet-total');
+            const fixedCharge = parseFloat(form.dataset.fixedCharge || '0') || 0;
+            const percentageCharge = parseFloat(form.dataset.percentageCharge || '0') || 0;
+            const currencySymbol = @json($currencySymbol);
+            const currency = @json($currency);
+            const updateEstimatedTotal = function () {
+                const amount = parseFloat(amountInput.value || '0') || 0;
+                totalLabel.textContent = currencySymbol + ' ' + (amount + fixedCharge + amount * percentageCharge / 100).toFixed(2) + ' ' + currency;
+            };
+            amountInput.addEventListener('input', updateEstimatedTotal);
+            updateEstimatedTotal();
+        });
+    </script>
     @if($withdrawalProvider === 'payza')
         <script>
             fetch(@json(route('user.wallet.payout-methods')))

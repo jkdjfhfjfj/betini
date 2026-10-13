@@ -7,8 +7,8 @@ Each user has one active native-currency wallet. Registration defaults that curr
 
 USD is the conversion base. Preserve balances that existed before this feature as USD; never silently reinterpret them as the user's local currency. A wallet currency change converts the active balance using current USD-based rates and is blocked while bets or payment transactions are unsettled.
 
-For this wallet, KES deposits must use PayHero and KES withdrawals must use Makamesco B2C. Admin configuration must not override these routes.
+For this wallet, PayHero remains the automatic KES deposit route and Makamesco B2C remains the automatic KES withdrawal route. Admins may explicitly enable manual KES deposit and withdrawal alternatives; these do not replace the automatic routes.
 
-**Why:** the user chose native-currency wallets with USD as the base, and specified PayHero for KES deposits and Makamesco B2C for KES withdrawals.
+**Why:** the user chose native-currency wallets with USD as the base, specified PayHero and Makamesco B2C for automatic KES payments, and later approved manual KES alternatives alongside them.
 
-**How to apply:** preserve these rules in wallet schema, balance conversion, bet amounts, payment routing defaults, persisted-route normalization, admin controls, history displays, and migration behavior.
+**How to apply:** preserve USD-based conversion, native-currency balances, automatic KES provider defaults, explicit admin-controlled manual alternatives, and currency/status checks across routing, ledger updates, admin decisions, history, and migrations.

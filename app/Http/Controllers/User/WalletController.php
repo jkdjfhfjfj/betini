@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\Upload;
+use App\Models\Gateway;
 use App\Models\PaymentProviderSetting;
 use App\Models\WalletProviderTransaction;
 use App\Services\CurrencyService;
@@ -18,9 +20,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Stevebauman\Purify\Facades\Purify;
 
 class WalletController extends Controller
 {
+    use Upload;
+
     private $currencies;
 
     public function __construct(CurrencyService $currencies)
@@ -37,6 +42,20 @@ class WalletController extends Controller
             ->orderByDesc('id')
             ->limit(20)
             ->get();
+        $manualDepositGateways = Gateway::manual()
+            ->where('status', 1)
+            ->whereRaw('UPPER(currency) = ?', [$currency])
+            ->orderBy('sort_by')
+            ->get();
+        $manualDepositGateways->each(function ($gateway) {
+            $note = trim((string)$gateway->note);
+            $safeNote = Purify::clean($note);
+            if ($note && filter_var($note, FILTER_VALIDATE_URL)
+                && in_array(strtolower((string)parse_url($note, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+                $safeNote = '<a href="' . e($note) . '" target="_blank" rel="noopener noreferrer">' . e($note) . '</a>';
+            }
+            $gateway->setAttribute('manual_instruction_html', $safeNote);
+        });
 
         try {
             $rateAvailable = true;
@@ -53,6 +72,7 @@ class WalletController extends Controller
             'suggestedCurrency' => $this->currencies->currencyForCountry($user->country_code),
             'depositProvider' => $routes[$currency]['deposit'] ?? null,
             'withdrawalProvider' => $routes[$currency]['withdrawal'] ?? null,
+            'manualDepositGateways' => $manualDepositGateways,
             'transactions' => $transactions,
             'rateAvailable' => $rateAvailable,
         ]);
@@ -186,6 +206,123 @@ class WalletController extends Controller
         }
     }
 
+    public function manualDeposit(Request $request)
+    {
+        $request->validate([
+            'gateway_id' => 'required|integer',
+            'amount' => 'required|numeric|gt:0|max:10000000',
+            'payment_fields' => 'sometimes|array',
+        ]);
+
+        $user = $this->currencies->initializeUser(auth()->user());
+        $currency = strtoupper($user->wallet_currency ?: 'USD');
+        $gateway = Gateway::manual()
+            ->where('status', 1)
+            ->findOrFail($request->input('gateway_id'));
+
+        if (strtoupper((string)$gateway->currency) !== $currency) {
+            return back()->withInput()->with('error', 'That manual deposit method is not available for your current wallet currency.');
+        }
+
+        $amount = round((float)$request->input('amount'), 2);
+        $minimum = (float)$gateway->min_amount;
+        $maximum = (float)$gateway->max_amount;
+        if (($minimum > 0 && $amount < $minimum) || ($maximum > 0 && $amount > $maximum)) {
+            return back()->withInput()->withErrors([
+                'amount' => 'The deposit amount must be between ' . $minimum . ' and ' . $maximum . ' ' . $currency . '.',
+            ]);
+        }
+
+        $parameters = (array)($gateway->parameters ?: []);
+        $rules = [];
+        $fieldIndex = 0;
+        foreach ($parameters as $field) {
+            $type = (string)($field->type ?? '');
+            if (in_array($type, ['text', 'textarea', 'file'], true)) {
+                $fieldRules = [($field->validation ?? '') === 'required' ? 'required' : 'nullable'];
+                if ($type === 'file') {
+                    $fieldRules = array_merge($fieldRules, ['image', 'mimes:jpeg,jpg,png', 'max:2048']);
+                } else {
+                    $fieldRules = array_merge($fieldRules, ['string', $type === 'textarea' ? 'max:300' : 'max:191']);
+                }
+                $rules['payment_fields.' . $fieldIndex] = $fieldRules;
+            }
+            $fieldIndex++;
+        }
+        if ($rules) {
+            Validator::make($request->all(), $rules)->validate();
+        }
+
+        $submittedFields = [];
+        $fieldIndex = 0;
+        $uploadPath = config('location.deposit.path') . date('Y') . '/' . date('m') . '/' . date('d');
+        foreach ($parameters as $key => $field) {
+            $type = (string)($field->type ?? '');
+            if (in_array($type, ['text', 'textarea', 'file'], true)) {
+                $value = null;
+                if ($type === 'file') {
+                    $file = $request->file('payment_fields.' . $fieldIndex);
+                    if ($file) {
+                        $value = $this->uploadImage($file, $uploadPath);
+                    }
+                } else {
+                    $value = trim((string)$request->input('payment_fields.' . $fieldIndex, ''));
+                }
+                if ($value !== null && $value !== '') {
+                    $submittedFields[] = [
+                        'label' => (string)($field->field_level ?? $key),
+                        'type' => $type,
+                        'value' => $value,
+                    ];
+                }
+            }
+            $fieldIndex++;
+        }
+
+        $fixedCharge = (float)$gateway->fixed_charge;
+        $percentageCharge = (float)$gateway->percentage_charge;
+        if ($fixedCharge < 0 || $percentageCharge < 0) {
+            return back()->withInput()->with('error', 'This manual deposit method has invalid fee settings. Please contact support.');
+        }
+        $fee = round($fixedCharge + ($amount * $percentageCharge / 100), 2);
+        $expectedPayment = round($amount + $fee, 2);
+        $rate = $this->optionalRateSnapshot($currency);
+        $reference = 'WMD' . strtoupper(Str::random(18));
+
+        try {
+            $entry = DB::transaction(function () use ($user, $currency, $gateway, $amount, $fee, $expectedPayment, $rate, $reference, $submittedFields) {
+                $lockedUser = \App\Models\User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+                if (strtoupper($lockedUser->wallet_currency ?: 'USD') !== $currency) {
+                    throw new RuntimeException('Your wallet currency changed. Refresh and submit again.');
+                }
+
+                return WalletProviderTransaction::create([
+                    'user_id' => $lockedUser->id,
+                    'reference' => $reference,
+                    'provider' => 'manual',
+                    'direction' => 'deposit',
+                    'currency_code' => $currency,
+                    'amount' => $amount,
+                    'fee' => $fee,
+                    'net_amount' => $amount,
+                    'usd_rate' => $rate,
+                    'status' => 'pending',
+                    'metadata' => [
+                        'gateway_id' => $gateway->id,
+                        'gateway_name' => $gateway->name,
+                        'expected_payment' => $expectedPayment,
+                        'submitted_fields' => $submittedFields,
+                    ],
+                ]);
+            });
+        } catch (\Throwable $exception) {
+            return back()->withInput()->with('error', $exception->getMessage());
+        }
+
+        return redirect()->route('user.wallet', ['reference' => $entry->reference])
+            ->with('success', 'Manual deposit submitted. Your wallet will be credited after an administrator verifies the payment.');
+    }
+
     public function withdraw(Request $request)
     {
         $user = $this->currencies->initializeUser(auth()->user());
@@ -299,6 +436,75 @@ class WalletController extends Controller
         } catch (\Throwable $exception) {
             return back()->withInput()->with('error', $exception->getMessage());
         }
+    }
+
+    public function manualWithdraw(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|gt:0|max:10000000',
+            'payout_method' => 'required|string|max:100',
+            'account_name' => 'required|string|max:120',
+            'account_number' => 'required|string|max:120',
+            'bank_name' => 'nullable|string|max:120',
+            'payment_notes' => 'nullable|string|max:500',
+        ]);
+
+        $user = $this->currencies->initializeUser(auth()->user());
+        $currency = strtoupper($user->wallet_currency ?: 'USD');
+        $amount = round((float)$request->input('amount'), 2);
+        $rate = $this->optionalRateSnapshot($currency);
+        $reference = 'WMW' . strtoupper(Str::random(18));
+
+        try {
+            $entry = DB::transaction(function () use ($user, $currency, $amount, $rate, $reference, $request) {
+                $lockedUser = \App\Models\User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+                if (strtoupper($lockedUser->wallet_currency ?: 'USD') !== $currency) {
+                    throw new RuntimeException('Your wallet currency changed. Refresh and submit again.');
+                }
+                if ((float)$lockedUser->balance < $amount) {
+                    throw new RuntimeException('Insufficient available balance.');
+                }
+
+                $lockedUser->balance = round((float)$lockedUser->balance - $amount, 2);
+                $lockedUser->save();
+
+                $transaction = WalletProviderTransaction::create([
+                    'user_id' => $lockedUser->id,
+                    'reference' => $reference,
+                    'provider' => 'manual',
+                    'direction' => 'withdrawal',
+                    'currency_code' => $currency,
+                    'amount' => $amount,
+                    'fee' => 0,
+                    'net_amount' => $amount,
+                    'usd_rate' => $rate,
+                    'status' => 'pending',
+                    'metadata' => [
+                        'payout_method' => trim((string)$request->input('payout_method')),
+                        'account_name' => trim((string)$request->input('account_name')),
+                        'account_number' => trim((string)$request->input('account_number')),
+                        'bank_name' => trim((string)$request->input('bank_name', '')),
+                        'payment_notes' => trim((string)$request->input('payment_notes', '')),
+                    ],
+                ]);
+
+                app(\App\Services\BasicService::class)->makeTransaction(
+                    $lockedUser,
+                    $amount,
+                    0,
+                    '-',
+                    $reference,
+                    'Manual withdrawal request for administrator review'
+                );
+
+                return $transaction;
+            });
+        } catch (\Throwable $exception) {
+            return back()->withInput()->with('error', $exception->getMessage());
+        }
+
+        return redirect()->route('user.wallet', ['reference' => $entry->reference])
+            ->with('success', 'Manual withdrawal submitted. The amount is reserved until an administrator approves or rejects the request.');
     }
 
     public function payoutMethods()
