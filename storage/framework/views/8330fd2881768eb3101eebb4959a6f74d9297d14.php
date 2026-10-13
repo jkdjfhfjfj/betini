@@ -16,6 +16,7 @@
             <div class="card card-primary m-0 m-md-4 my-4 shadow">
                 <div class="card-body">
                     <h5 class="card-title font-weight-bold"><?php echo app('translator')->get('Automatic provider routing'); ?></h5>
+                    <p class="text-muted">KES deposits are fixed to PayHero M-Pesa STK, and KES withdrawals are fixed to Makamesco B2C.</p>
                     <?php if(adminAccessRoute(config('role.payment_gateway.access.edit'))): ?>
                     <form method="post" action="<?php echo e(route('admin.wallet-providers.save')); ?>">
                         <?php echo csrf_field(); ?>
@@ -33,26 +34,36 @@
                                     <tr>
                                         <td><?php echo e($currencyInfo['name']); ?> (<?php echo e($code); ?>)</td>
                                         <td>
-                                            <select class="form-control" name="routes[<?php echo e($code); ?>][deposit]" required>
-                                                <?php $__currentLoopData = $routeOptions[$code]['deposit']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                    <option value="<?php echo e($option); ?>" <?php echo e(($routes[$code]['deposit'] ?? '') === $option ? 'selected' : ''); ?>>
-                                                        <?php if($option === 'payhero'): ?> PayHero M-Pesa STK
-                                                        <?php elseif($option === 'payza'): ?> Payza
-                                                        <?php else: ?> Card (Paystack)
-                                                        <?php endif; ?>
-                                                    </option>
-                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                            </select>
+                                            <?php if($code === 'KES'): ?>
+                                                <strong>PayHero M-Pesa STK (fixed)</strong>
+                                                <input type="hidden" name="routes[<?php echo e($code); ?>][deposit]" value="payhero">
+                                            <?php else: ?>
+                                                <select class="form-control" name="routes[<?php echo e($code); ?>][deposit]" required>
+                                                    <?php $__currentLoopData = $routeOptions[$code]['deposit']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                        <option value="<?php echo e($option); ?>" <?php echo e(($routes[$code]['deposit'] ?? '') === $option ? 'selected' : ''); ?>>
+                                                            <?php if($option === 'payhero'): ?> PayHero M-Pesa STK
+                                                            <?php elseif($option === 'payza'): ?> Payza
+                                                            <?php else: ?> Card (Paystack)
+                                                            <?php endif; ?>
+                                                        </option>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                </select>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
-                                            <select class="form-control" name="routes[<?php echo e($code); ?>][withdrawal]" required>
-                                                <?php $__currentLoopData = $routeOptions[$code]['withdrawal']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                    <option value="<?php echo e($option); ?>" <?php echo e(($routes[$code]['withdrawal'] ?? '') === $option ? 'selected' : ''); ?>>
-                                                        <?php echo e($option === 'makamesco' ? 'Makamesco B2C (M-Pesa)' : 'Payza Payouts'); ?>
+                                            <?php if($code === 'KES'): ?>
+                                                <strong>Makamesco B2C (M-Pesa, fixed)</strong>
+                                                <input type="hidden" name="routes[<?php echo e($code); ?>][withdrawal]" value="makamesco">
+                                            <?php else: ?>
+                                                <select class="form-control" name="routes[<?php echo e($code); ?>][withdrawal]" required>
+                                                    <?php $__currentLoopData = $routeOptions[$code]['withdrawal']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                        <option value="<?php echo e($option); ?>" <?php echo e(($routes[$code]['withdrawal'] ?? '') === $option ? 'selected' : ''); ?>>
+                                                            <?php echo e($option === 'makamesco' ? 'Makamesco B2C (M-Pesa)' : 'Payza Payouts'); ?>
 
-                                                    </option>
-                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                            </select>
+                                                        </option>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                </select>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -102,7 +113,7 @@
                             <div class="col-lg-6">
                                 <div class="border rounded p-3 mb-3">
                                     <h6>Makamesco B2C — KES withdrawals</h6>
-                                    <p class="text-muted">Create an API key in the Makamesco dashboard and fund its B2C wallet; the published fee is charged to that wallet.</p>
+                                    <p class="text-muted">Create an API key in the Makamesco dashboard and fund its B2C wallet; the published fee is charged to that wallet. See <a href="https://makamescopay.com/docs" target="_blank" rel="noopener">Makamesco API docs</a>.</p>
                                     <label>Makamesco API key</label>
                                     <input class="form-control mb-2" type="password" name="makamesco[api_key]" autocomplete="new-password">
                                     <div>API key: <strong><?php echo e(!empty($settings['makamesco']['api_key']) ? 'Saved' : 'Not set'); ?></strong></div>

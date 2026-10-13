@@ -18,6 +18,7 @@
             <div class="card card-primary m-0 m-md-4 my-4 shadow">
                 <div class="card-body">
                     <h5 class="card-title font-weight-bold">@lang('Automatic provider routing')</h5>
+                    <p class="text-muted">KES deposits are fixed to PayHero M-Pesa STK, and KES withdrawals are fixed to Makamesco B2C.</p>
                     @if(adminAccessRoute(config('role.payment_gateway.access.edit')))
                     <form method="post" action="{{ route('admin.wallet-providers.save') }}">
                         @csrf
@@ -35,25 +36,35 @@
                                     <tr>
                                         <td>{{ $currencyInfo['name'] }} ({{ $code }})</td>
                                         <td>
-                                            <select class="form-control" name="routes[{{ $code }}][deposit]" required>
-                                                @foreach($routeOptions[$code]['deposit'] as $option)
-                                                    <option value="{{ $option }}" {{ ($routes[$code]['deposit'] ?? '') === $option ? 'selected' : '' }}>
-                                                        @if($option === 'payhero') PayHero M-Pesa STK
-                                                        @elseif($option === 'payza') Payza
-                                                        @else Card (Paystack)
-                                                        @endif
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            @if($code === 'KES')
+                                                <strong>PayHero M-Pesa STK (fixed)</strong>
+                                                <input type="hidden" name="routes[{{ $code }}][deposit]" value="payhero">
+                                            @else
+                                                <select class="form-control" name="routes[{{ $code }}][deposit]" required>
+                                                    @foreach($routeOptions[$code]['deposit'] as $option)
+                                                        <option value="{{ $option }}" {{ ($routes[$code]['deposit'] ?? '') === $option ? 'selected' : '' }}>
+                                                            @if($option === 'payhero') PayHero M-Pesa STK
+                                                            @elseif($option === 'payza') Payza
+                                                            @else Card (Paystack)
+                                                            @endif
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            @endif
                                         </td>
                                         <td>
-                                            <select class="form-control" name="routes[{{ $code }}][withdrawal]" required>
-                                                @foreach($routeOptions[$code]['withdrawal'] as $option)
-                                                    <option value="{{ $option }}" {{ ($routes[$code]['withdrawal'] ?? '') === $option ? 'selected' : '' }}>
-                                                        {{ $option === 'makamesco' ? 'Makamesco B2C (M-Pesa)' : 'Payza Payouts' }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            @if($code === 'KES')
+                                                <strong>Makamesco B2C (M-Pesa, fixed)</strong>
+                                                <input type="hidden" name="routes[{{ $code }}][withdrawal]" value="makamesco">
+                                            @else
+                                                <select class="form-control" name="routes[{{ $code }}][withdrawal]" required>
+                                                    @foreach($routeOptions[$code]['withdrawal'] as $option)
+                                                        <option value="{{ $option }}" {{ ($routes[$code]['withdrawal'] ?? '') === $option ? 'selected' : '' }}>
+                                                            {{ $option === 'makamesco' ? 'Makamesco B2C (M-Pesa)' : 'Payza Payouts' }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach

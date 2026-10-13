@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\WalletWebhookController;
+use App\Http\Controllers\Admin\WalletProviderController;
 use App\Models\PaymentProviderSetting;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletProviderTransaction;
+use App\Services\CurrencyService;
 use App\Services\Payments\PayzaClient;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -241,6 +243,26 @@ class WalletProviderSafetyTest extends TestCase
         $this->assertEquals(60, (float)$user->fresh()->balance);
         $this->assertSame(0, Transaction::count());
         Http::assertNothingSent();
+    }
+
+    public function test_kes_routing_stays_on_payhero_and_makamesco_even_if_saved_routes_are_stale()
+    {
+        $routing = PaymentProviderSetting::forProvider('routing');
+        $routing->settings = [
+            'KES' => ['deposit' => 'payza', 'withdrawal' => 'payza'],
+            'GHS' => ['deposit' => 'payza', 'withdrawal' => 'payza'],
+        ];
+        $routing->save();
+
+        $routes = app(CurrencyService::class)->providerRoutes();
+        $this->assertSame('payhero', $routes['KES']['deposit']);
+        $this->assertSame('makamesco', $routes['KES']['withdrawal']);
+        $this->assertSame('payza', $routes['GHS']['deposit']);
+
+        $view = app(WalletProviderController::class)->index();
+        $routeOptions = $view->getData()['routeOptions'];
+        $this->assertSame(['payhero'], $routeOptions['KES']['deposit']);
+        $this->assertSame(['makamesco'], $routeOptions['KES']['withdrawal']);
     }
 
     public function test_paystack_webhook_requires_a_valid_signature_and_credits_a_verified_charge_only_once()

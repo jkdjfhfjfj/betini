@@ -142,6 +142,12 @@ class CurrencyService
             ];
         }
 
-        return array_replace_recursive($defaults, $settings);
+        $routes = array_replace_recursive($defaults, $settings);
+        $routes['KES'] = [
+            'deposit' => 'payhero',
+            'withdrawal' => 'makamesco',
+        ];
+
+        return $routes;
     }
 }

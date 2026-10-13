@@ -43,9 +43,9 @@ class WalletProviderController extends Controller
         foreach (array_keys($this->currencies->supportedCurrencies()) as $currency) {
             $routeOptions[$currency] = [
                 'deposit' => $currency === 'KES'
-                    ? ['payhero', 'payza']
+                    ? ['payhero']
                     : ($currency === 'USD' ? ['paystack'] : ['payza']),
-                'withdrawal' => $currency === 'KES' ? ['makamesco', 'payza'] : ['payza'],
+                'withdrawal' => $currency === 'KES' ? ['makamesco'] : ['payza'],
             ];
         }
 
@@ -95,9 +95,9 @@ class WalletProviderController extends Controller
                 $routes = [];
                 foreach (array_keys($this->currencies->supportedCurrencies()) as $currency) {
                     $depositOptions = $currency === 'KES'
-                        ? ['payhero', 'payza']
+                        ? ['payhero']
                         : ($currency === 'USD' ? ['paystack'] : ['payza']);
-                    $withdrawalOptions = $currency === 'KES' ? ['makamesco', 'payza'] : ['payza'];
+                    $withdrawalOptions = $currency === 'KES' ? ['makamesco'] : ['payza'];
                     $deposit = $request->input('routes.' . $currency . '.deposit');
                     $withdrawal = $request->input('routes.' . $currency . '.withdrawal');
 
