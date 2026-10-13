@@ -55,6 +55,10 @@ class WalletProviderSafetyTest extends TestCase
             'amount' => 12.50,
             'net_amount' => 12.50,
         ]);
+        // The deposit initiation flow stores the provider reference, falling
+        // back to the merchant reference sent as PayHero's external_reference.
+        $entry->provider_reference = $entry->reference;
+        $entry->save();
         $this->saveProviderSettings('payhero', [
             'username' => 'test-user',
             'password' => 'test-password',
@@ -82,7 +86,7 @@ class WalletProviderSafetyTest extends TestCase
         $this->assertEquals(17.5, (float)$user->fresh()->balance);
         $this->assertSame('succeeded', $entry->fresh()->status);
         $this->assertSame(1, Transaction::where('trx_id', $entry->reference)->count());
-        Http::assertSentCount(2);
+        Http::assertSentCount(1);
     }
 
     public function test_payza_signed_success_webhook_credits_once_without_a_second_provider_request()
