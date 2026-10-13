@@ -1,5 +1,7 @@
 @if(isset($contentDetails['slider']) && $contentDetails['slider']->isNotEmpty())
-    @php($promoSlides = $contentDetails['slider'])
+    @php
+        $promoSlides = $contentDetails['slider'];
+    @endphp
     <section class="home-promo-carousel" aria-label="@lang('Featured promotions')" data-home-promo-carousel>
         <div class="home-promo-track" data-home-promo-track>
             @foreach($promoSlides as $data)
