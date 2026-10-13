@@ -138,10 +138,14 @@ CREATE TABLE IF NOT EXISTS game_options (
     updated_at DATETIME NULL
 );
 
-INSERT OR IGNORE INTO game_categories
+INSERT INTO game_categories
     (id, name, slug, icon, status, created_at, updated_at)
 VALUES
-    (1, 'Football', 'football', 'fas fa-futbol', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    (1, 'Football', 'football', '<i class="fas fa-futbol" aria-hidden="true"></i>', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT(id) DO UPDATE SET
+    icon = excluded.icon,
+    status = excluded.status,
+    updated_at = CURRENT_TIMESTAMP;
 
 INSERT OR IGNORE INTO game_tournaments
     (id, category_id, name, slug, status, created_at, updated_at)

@@ -1,5 +1,5 @@
 <!-- navbar -->
-<nav class="navbar navbar-expand-md fixed-top">
+<nav class="navbar navbar-expand-lg fixed-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="{{route('home')}}">
             <img src="{{getFile(config('location.logoIcon.path').'logo.png')}}" alt="homepage">

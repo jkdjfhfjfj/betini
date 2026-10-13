@@ -1899,6 +1899,23 @@ body.auth-screen .login-section.auth-page { padding-top: 24px; }
     .leftbar, .rightbar, #userPanelSideBar { z-index: 1070 !important; }
     .bottom-bar { z-index: 1090 !important; }
     .navbar { z-index: 1100 !important; }
+    .navbar.navbar-expand-lg > .container-fluid { flex-wrap: nowrap !important; }
+    .navbar.navbar-expand-lg .navbar-toggler { display: inline-flex !important; }
+    .navbar.navbar-expand-lg .navbar-collapse:not(.show) { display: none !important; }
+    .navbar.navbar-expand-lg .navbar-collapse.show {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        display: block !important;
+        max-height: calc(100dvh - 62px);
+        overflow-y: auto;
+        padding: 8px 14px 12px;
+        border-top: 1px solid var(--sb-line);
+        background: #132631 !important;
+        box-shadow: 0 14px 30px rgba(0, 0, 0, .28);
+    }
+    .navbar.navbar-expand-lg .navbar-collapse.show .navbar-nav { flex-direction: column; }
 }
 @media (max-width: 767.98px) {
     .leftbar, #userPanelSideBar {
@@ -1942,6 +1959,6 @@ body.auth-screen .login-section.auth-page { padding-top: 24px; }
     .bottom-bar > .bottom-theme-toggle .nav-label { font-size: 8px; }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 992px) {
     .navbar .navbar-toggler { display: none !important; }
 }
