@@ -126,7 +126,10 @@
                         </div>
                         <div class="form-group mb-3">
                             <label for="account_number">{{ $withdrawalProvider === 'makamesco' ? 'Safaricom M-Pesa number' : 'Account number / wallet address' }}</label>
-                            <input id="account_number" class="form-control" name="account_number" maxlength="80" value="{{ old('account_number', $withdrawalProvider === 'makamesco' ? $user->mobile : '') }}" required>
+                            <input id="account_number" class="form-control" name="account_number" maxlength="80" value="{{ old('account_number', $withdrawalProvider === 'makamesco' ? $user->mobile : '') }}" @if($withdrawalProvider === 'makamesco') type="tel" inputmode="tel" autocomplete="tel" placeholder="2547XXXXXXXX or 07XXXXXXXX" aria-describedby="mpesa-number-help" @endif required>
+                            @if($withdrawalProvider === 'makamesco')
+                                <small id="mpesa-number-help" class="form-text text-muted">Enter a Kenyan Safaricom number as 2547…, 2541…, 07…, or 01…. A leading + is also accepted.</small>
+                            @endif
                         </div>
                         @if($withdrawalProvider === 'payza')
                             <div class="form-group mb-3">

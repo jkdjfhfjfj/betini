@@ -349,6 +349,16 @@ class WalletController extends Controller
             return back()->with('error', 'No withdrawal provider is configured for ' . $currency . '.');
         }
 
+        if ($provider === 'makamesco') {
+            try {
+                $request->merge([
+                    'account_number' => $this->normalizeKenyanPhone($request->input('account_number')),
+                ]);
+            } catch (RuntimeException $exception) {
+                return back()->withErrors(['account_number' => $exception->getMessage()])->withInput();
+            }
+        }
+
         try {
             $rate = $this->optionalRateSnapshot($currency);
             $settings = $this->providerSettings($provider);
@@ -803,7 +813,13 @@ class WalletController extends Controller
     private function normalizeKenyanPhone($phone)
     {
         $digits = preg_replace('/\D+/', '', (string)$phone);
-        if (Str::startsWith($digits, '0')) {
+        if (Str::startsWith($digits, '00254')) {
+            $digits = substr($digits, 2);
+        } elseif (preg_match('/^2540(?:7|1)[0-9]{8}$/', $digits)) {
+            $digits = '254' . substr($digits, 4);
+        } elseif (preg_match('/^254254(?:7|1)[0-9]{8}$/', $digits)) {
+            $digits = substr($digits, 3);
+        } elseif (Str::startsWith($digits, '0')) {
             $digits = '254' . substr($digits, 1);
         } elseif (Str::startsWith($digits, '7') || Str::startsWith($digits, '1')) {
             $digits = '254' . $digits;

@@ -37,7 +37,9 @@
 
 @yield('content')
 
-@include($theme.'partials.footer')
+@if(!in_array(Request::route()->getName(), ['home','category','tournament','match','login','register','register.sponsor','user.check','password.request']))
+    @include($theme.'partials.footer')
+@endif
 
 
 
@@ -148,12 +150,14 @@
     // dark mode
     const darkMode = () => {
         var $theme = document.body.classList.toggle("dark-mode");
+        var themeButton = document.querySelector(".theme-toggle");
+        if (themeButton) {
+            themeButton.setAttribute("aria-pressed", $theme ? "true" : "false");
+            themeButton.setAttribute("aria-label", $theme ? "Switch to light mode" : "Switch to dark mode");
+        }
         $.ajax({
             url: "{{ route('themeMode') }}/" + $theme,
             type: 'get',
-            success: function (response) {
-                console.log(response);
-            }
         });
     };
 

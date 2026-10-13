@@ -34,6 +34,20 @@
             </ul>
         </div>
         <div class="navbar-text">
+            <button
+                type="button"
+                class="theme-toggle"
+                onclick="darkMode()"
+                aria-label="{{ session()->get('dark-mode') == 'true' ? 'Switch to light mode' : 'Switch to dark mode' }}"
+                aria-pressed="{{ session()->get('dark-mode') == 'true' ? 'true' : 'false' }}">
+                <svg class="theme-toggle-sun" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path>
+                </svg>
+                <svg class="theme-toggle-moon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M20.2 15.5A8.8 8.8 0 0 1 8.5 3.8 8.9 8.9 0 1 0 20.2 15.5Z"></path>
+                </svg>
+            </button>
             @auth
                 @include($theme.'partials.wallet-currency-switch')
                 <div class="dropdown user-dropdown d-inline-block">
@@ -146,16 +160,19 @@
     </div>
 </nav>
 
-@if(in_array(Request::route()->getName(),['home','category','tournament','match']))
+@if(in_array(Request::route()->getName(),['home','category','tournament','match']) || Request::routeIs('user.*'))
 
     <div class="bottom-bar fixed-bottom text-center">
-        <a href="{{ route('home') }}" class="text-dark">
+        <a href="{{ route('home') }}" class="text-dark {{ Request::routeIs('home','category','tournament','match') ? 'active' : '' }}" @if(Request::routeIs('home','category','tournament','match')) aria-current="page" @endif>
             <i class="fa fa-home"></i>
             <span class="nav-label">@lang('Home')</span>
         </a>
         <a href="{{ route('home') }}" class="text-dark"
            onclick="localStorage.setItem('showType', 'live')">
-            <i class="las la-podcast"></i>
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="2.2"></circle>
+                <path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6m7.6-7.6a5.4 5.4 0 0 1 0 7.6M5.4 5.4a9.3 9.3 0 0 0 0 13.2m13.2-13.2a9.3 9.3 0 0 1 0 13.2"></path>
+            </svg>
             <span class="nav-label">@lang('Live')</span>
         </a>
 
@@ -166,11 +183,11 @@
         </a>
 
         @auth
-            <a href="{{ route('user.betHistory') }}" class="text-dark">
+            <a href="{{ route('user.betHistory') }}" class="text-dark {{ Request::routeIs('user.betHistory') ? 'active' : '' }}" @if(Request::routeIs('user.betHistory')) aria-current="page" @endif>
                 <i class="fal fa-receipt"></i>
                 <span class="nav-label">@lang('My Bets')</span>
             </a>
-            <a href="{{ route('user.profile') }}" class="text-dark">
+            <a href="{{ route('user.profile') }}" class="text-dark {{ Request::routeIs('user.profile') ? 'active' : '' }}" @if(Request::routeIs('user.profile')) aria-current="page" @endif>
                 <i class="fal fa-user"></i>
                 <span class="nav-label">@lang('Profile')</span>
             </a>

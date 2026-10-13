@@ -267,3 +267,298 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+/* Shared light/dark tokens and page-surface overrides. */
+:root {
+    color-scheme: light;
+    --sb-canvas: #f3f6f8;
+    --sb-surface: #ffffff;
+    --sb-elevated: #edf2f5;
+    --sb-line: rgba(18, 32, 43, .13);
+    --sb-text: #172431;
+    --sb-muted: #536372;
+    --sb-green: #5c962b;
+    --sb-green-deep: #47791e;
+    --sb-lime-wash: rgba(92, 150, 43, .14);
+    --sb-yellow: #f4cc24;
+}
+
+body.dark-mode {
+    color-scheme: dark;
+    --sb-canvas: #101b27;
+    --sb-surface: #172431;
+    --sb-elevated: #1d2c3a;
+    --sb-line: rgba(224, 235, 242, .12);
+    --sb-text: #edf2f4;
+    --sb-muted: #aab8c2;
+    --sb-green: #8bc84d;
+    --sb-green-deep: #5c962b;
+    --sb-lime-wash: rgba(139, 200, 77, .16);
+    --sb-yellow: #f4cc24;
+}
+
+html, body, body.dark-mode,
+.wrapper, .wrapper > .content, .login-section, .user-panel,
+.banner-section {
+    background-color: var(--sb-canvas) !important;
+    color: var(--sb-text);
+}
+body :is(h1,h2,h3,h4,h5,h6), body p, body label, body small,
+body .text-muted, body .form-text, body .breadcrumb-item,
+body .user-panel :is(p,span,td,th,li) {
+    color: var(--sb-muted);
+}
+body :is(h1,h2,h3,h4,h5,h6), body .user-panel :is(h1,h2,h3,h4,h5,h6) {
+    color: var(--sb-text);
+}
+body a:not(.btn-custom):not(.btn-custom2):not(.nav-link):not(.page-link) { color: var(--sb-green-deep); }
+body.dark-mode a:not(.btn-custom):not(.btn-custom2):not(.nav-link):not(.page-link) { color: var(--sb-green); }
+
+.navbar, .leftbar, .rightbar, .bottom-bar,
+.navbar .navbar-collapse, .leftbar .top.profile,
+.user-panel .card, .user-panel .card-body,
+.user-panel .modal-content, .user-panel .modal-custom-content,
+.user-panel .table-parent, .user-panel .dashboard__card,
+.user-panel .dashboard__card-content,
+.user-panel .dashboard__card-icon,
+.user-panel .deposit-group, .user-panel .post__item-content,
+.user-panel .user-panel form, .user-panel .table,
+.user-panel .apexcharts-canvas,
+.dropdown-menu, .notification-dropdown,
+.bet-history-table table {
+    background-color: var(--sb-surface) !important;
+    color: var(--sb-text) !important;
+    border-color: var(--sb-line) !important;
+}
+.navbar .nav-item .nav-link, .leftbar li a,
+.navbar .dropdown-menu a, .navbar .notification-dropdown a,
+.user-panel .dashboard__card-content .price,
+.user-panel .dashboard__card-content .info,
+.user-panel .table-parent :is(th,td),
+.user-panel .modal-custom-content :is(th,td),
+.user-panel .top.profile h4, .user-panel .top.profile h5 {
+    color: var(--sb-text) !important;
+}
+.user-panel .dashboard__card-icon {
+    box-shadow: none;
+    filter: none;
+}
+.user-panel .card, .user-panel .dashboard__card,
+.user-panel .table-parent, .user-panel .modal-custom-content,
+.user-panel form {
+    border: 1px solid var(--sb-line) !important;
+    border-radius: 12px;
+    background-color: var(--sb-surface) !important;
+    color: var(--sb-text) !important;
+}
+.user-panel .table-striped > tbody > tr:nth-of-type(odd) > *,
+.user-panel .table > :not(caption) > * > * {
+    background-color: transparent !important;
+}
+.user-panel .table-parent thead,
+.user-panel .table-parent th { background-color: var(--sb-elevated) !important; }
+.user-panel :is(.form-control,.form-select,.form-check-input,.input-group-text) {
+    background-color: var(--sb-elevated) !important;
+    color: var(--sb-text) !important;
+    border-color: var(--sb-line) !important;
+}
+.user-panel :is(input,textarea,select)::placeholder { color: var(--sb-muted) !important; opacity: 1; }
+.user-panel select option { background: var(--sb-surface); color: var(--sb-text); }
+.user-panel .alert :is(p,span,div) { color: inherit; }
+.user-panel .badge { color: #fff !important; }
+
+.navbar .theme-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border: 1px solid var(--sb-line);
+    border-radius: 9px;
+    background: var(--sb-elevated);
+    color: var(--sb-text);
+    cursor: pointer;
+}
+.navbar .theme-toggle:hover { background: var(--sb-lime-wash); color: var(--sb-text); }
+.theme-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.theme-toggle-moon { display: none; }
+.dark-mode .theme-toggle-sun { display: none; }
+.dark-mode .theme-toggle-moon { display: block; }
+
+.categories a.active, .categories a.active:hover {
+    background: var(--sb-green) !important;
+    color: #10200b !important;
+    box-shadow: inset 0 -2px var(--sb-green-deep);
+}
+.categories .category-icon {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.categories .category-icon, .leftbar .category-icon {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.feed-tab-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: -3px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.bottom-bar a { display: inline-grid; }
+.bottom-bar a.active, .bottom-bar a:hover { color: var(--sb-green) !important; }
+.bottom-bar a:first-child:not(.active) { color: var(--sb-muted) !important; }
+.bottom-bar .nav-icon {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.login-section {
+    height: auto;
+    min-height: calc(100dvh - 60px);
+    overflow: visible;
+    padding: 60px 0 24px;
+}
+.login-section > .container-fluid,
+.login-section > .container-fluid > .row { min-height: calc(100dvh - 84px); height: auto !important; }
+.login-section .text-box { min-height: 100%; border-radius: 0 16px 16px 0; overflow: hidden; }
+.login-section .overlay { background: linear-gradient(135deg, rgba(7, 19, 29, .82), rgba(14, 35, 44, .46)); }
+.login-section .overlay .text { padding: 28px; }
+.login-section .overlay .text h2 { color: #fff !important; }
+.login-section .overlay .text a { color: #b6eb82 !important; }
+.login-section .form-wrapper {
+    min-height: 100%;
+    padding: 28px clamp(16px, 4vw, 56px);
+    background: transparent !important;
+    border: 0 !important;
+}
+.login-section form {
+    width: 100%;
+    padding: clamp(20px, 3vw, 36px);
+    background: var(--sb-surface) !important;
+    border: 1px solid var(--sb-line) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 12px 32px rgba(14, 30, 40, .08);
+}
+.login-section form .input-box .form-control,
+.login-section form .input-box .form-select,
+.modal form .input-box .form-control,
+.modal form .input-box .form-select {
+    min-height: 46px;
+    padding: 10px 12px;
+    border: 1px solid var(--sb-line) !important;
+    border-radius: 9px !important;
+    background-color: var(--sb-elevated) !important;
+    color: var(--sb-text) !important;
+}
+.login-section form .input-box .form-control::placeholder,
+.login-section form .input-box .form-select:invalid,
+.modal form .input-box .form-control::placeholder { color: var(--sb-muted) !important; }
+.login-section form .links .form-check label,
+.login-section form .bottom { color: var(--sb-muted) !important; }
+.login-section form .links a, .login-section form .bottom a { color: var(--sb-green-deep) !important; }
+.dark-mode .login-section form .links a,
+.dark-mode .login-section form .bottom a { color: var(--sb-green) !important; }
+.login-section .text-danger { display: block; font-size: 12px; }
+.login-section .form-check-input { border-color: var(--sb-line); }
+.login-section .form-check-input:checked { background-color: var(--sb-green-deep); border-color: var(--sb-green-deep); }
+
+.user-panel .bet-history-table {
+    display: block !important;
+    overflow-x: auto !important;
+}
+.user-panel .bet-history-table table { min-width: 760px; }
+.user-panel .bet-history-table td[data-label="Information"] button,
+.user-panel .dashboard .table-parent td button {
+    color: var(--sb-text);
+    background: var(--sb-elevated);
+}
+.user-panel .apexcharts-canvas :is(text,.apexcharts-legend-text) { fill: var(--sb-muted); color: var(--sb-muted); }
+.user-panel .apexcharts-tooltip,
+.user-panel .apexcharts-xaxistooltip,
+.user-panel .apexcharts-yaxistooltip {
+    background: var(--sb-surface) !important;
+    color: var(--sb-text) !important;
+    border-color: var(--sb-line) !important;
+}
+.user-panel #investLogList .modal-body { overflow-x: auto; }
+.user-panel #investLogList .modal-body table { min-width: 720px; }
+
+@media (max-width: 991.98px) {
+    .navbar, .navbar .navbar-collapse, .leftbar, .rightbar, .bottom-bar { background-color: var(--sb-surface) !important; }
+    .navbar .theme-toggle { width: 34px; height: 34px; flex-basis: 34px; }
+    .bottom-bar { justify-content: space-around; }
+    .user-panel .table-parent { display: block !important; }
+}
+@media (max-width: 575.98px) {
+    .navbar .navbar-text .theme-toggle { display: inline-grid !important; }
+    .navbar .navbar-text .wallet-currency-switch select { min-width: 56px !important; }
+    .login-section { min-height: calc(100dvh - 54px); padding: 66px 12px 78px; }
+    .login-section > .container-fluid,
+    .login-section > .container-fluid > .row { min-height: 0; }
+    .login-section .row > .col-lg-6:first-child { padding: 0 !important; }
+    .login-section .text-box { min-height: 116px; height: auto !important; border-radius: 12px 12px 0 0; background-position: center 38%; }
+    .login-section .overlay { min-height: 116px; }
+    .login-section .overlay .text { padding: 16px; }
+    .login-section .overlay .text h2 { font-size: 22px; margin-bottom: 4px; }
+    .login-section .form-wrapper { min-height: 0; padding: 12px 0 0; }
+    .login-section form { padding: 20px 16px; }
+    .login-section form .row { --bs-gutter-y: 14px; }
+    .login-section form .input-box.col-6 { width: 100%; }
+    .user-panel .bet-history-table { overflow: visible !important; border: 0; background: transparent !important; }
+    .user-panel .bet-history-table table,
+    .user-panel .bet-history-table tbody,
+    .user-panel .bet-history-table tr,
+    .user-panel .bet-history-table td { display: block; width: 100%; min-width: 0; }
+    .user-panel .bet-history-table table { border-collapse: separate; border-spacing: 0 9px; }
+    .user-panel .bet-history-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+    .user-panel .bet-history-table tbody tr:not(:has(td[colspan])) {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 12px;
+        margin: 0 0 10px;
+        padding: 9px 12px;
+        border: 1px solid var(--sb-line);
+        border-radius: 12px;
+        background: var(--sb-surface);
+    }
+    .user-panel .bet-history-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--sb-line);
+        text-align: right !important;
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
+    .user-panel .bet-history-table tbody td::before {
+        content: attr(data-label);
+        color: var(--sb-muted);
+        font-weight: 600;
+        text-align: left;
+    }
+    .user-panel .bet-history-table tbody td[data-label="Information"] button { margin-left: auto; }
+    .user-panel .bet-history-table tbody tr:has(td[colspan]) { display: block; padding: 18px 10px; text-align: center; }
+}

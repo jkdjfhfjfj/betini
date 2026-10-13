@@ -17,11 +17,17 @@
             </div>
             <div class="top p-1 d-flex">
                 <button @click="liveUpComing('live')" type="button" :class="{light: (showType == 'upcoming')}"  class="btn-custom me-1">
-                    <i class="las la-podcast"></i>
+                    <svg class="feed-tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="2.2"></circle>
+                        <path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6m7.6-7.6a5.4 5.4 0 0 1 0 7.6M5.4 5.4a9.3 9.3 0 0 0 0 13.2m13.2-13.2a9.3 9.3 0 0 1 0 13.2"></path>
+                    </svg>
                     @lang('Live')
                 </button>
                 <button @click="liveUpComing('upcoming')" type="button" :class="{light: (showType == 'live')}"  class="btn-custom ">
-                    <i class="las la-meteor"></i>
+                    <svg class="feed-tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="4" y="5" width="16" height="16" rx="2"></rect>
+                        <path d="M8 3v4m8-4v4M4 10h16M8 14h3"></path>
+                    </svg>
                     @lang('Upcoming')
                 </button>
             </div>

@@ -7,7 +7,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body ">
-                    <div class="table-parent table-responsive m-0">
+                    <div class="table-parent table-responsive bet-history-table m-0">
                         <table class="table  table-striped" id="service-table">
                             <thead>
                             <tr>
