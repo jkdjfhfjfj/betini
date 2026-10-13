@@ -42,17 +42,99 @@
         <!-- contents -->
         <div class="content">
             <?php echo $__env->make($theme.'partials.home.navbar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
-            <div class="match-feed-controls">
-                <h1 class="feed-title"><?php if(Request::routeIs('match')): ?> <?php echo app('translator')->get('Match markets'); ?> <?php else: ?> <?php echo app('translator')->get('Matches'); ?> <?php endif; ?></h1>
-                <div class="feed-switch" role="group" aria-label="<?php echo app('translator')->get('Match timing'); ?>">
-                    <button type="button" @click="liveUpComing('live')" :class="{active: showType == 'live'}" :aria-pressed="showType == 'live'"><?php echo app('translator')->get('Live'); ?></button>
-                    <button type="button" @click="liveUpComing('upcoming')" :class="{active: showType == 'upcoming'}" :aria-pressed="showType == 'upcoming'"><?php echo app('translator')->get('Upcoming'); ?></button>
+
+            <?php if(!Request::routeIs('match')): ?>
+                <nav class="match-competition-tabs" role="tablist" aria-label="<?php echo app('translator')->get('Match sections'); ?>">
+                    <button type="button" role="tab"
+                            @click="selectCompetitionTab('highlights')"
+                            :class="{active: showType == 'live'}"
+                            :aria-selected="showType == 'live'"><?php echo app('translator')->get('Highlights'); ?></button>
+                    <button type="button" role="tab"
+                            @click="selectCompetitionTab('upcoming')"
+                            :class="{active: showType == 'upcoming'}"
+                            :aria-selected="showType == 'upcoming'"><?php echo app('translator')->get('Upcoming'); ?></button>
+                    <button type="button" role="tab" class="is-unavailable" disabled title="<?php echo app('translator')->get('This section is not connected to the current match feed.'); ?>"><?php echo app('translator')->get('Countries'); ?></button>
+                    <button type="button" role="tab" class="is-unavailable" disabled title="<?php echo app('translator')->get('This section is not connected to the current match feed.'); ?>"><?php echo app('translator')->get('Zoom Soccer'); ?></button>
+                    <button type="button" role="tab" class="is-unavailable" disabled title="<?php echo app('translator')->get('This section is not connected to the current match feed.'); ?>"><?php echo app('translator')->get('Jackpots'); ?></button>
+                    <button type="button" role="tab" class="is-unavailable" disabled title="<?php echo app('translator')->get('This section is not connected to the current match feed.'); ?>"><?php echo app('translator')->get('New'); ?></button>
+                    <button type="button" role="tab" class="is-unavailable" disabled title="<?php echo app('translator')->get('This section is not connected to the current match feed.'); ?>"><?php echo app('translator')->get('Turbo'); ?></button>
+                </nav>
+
+                <div class="match-filter-toolbar" role="group" aria-label="<?php echo app('translator')->get('Match filters'); ?>">
+                    <div class="match-filter-menu">
+                        <button type="button" class="match-filter-button"
+                                @click="toggleFeedMenu('filters')"
+                                :aria-expanded="openFeedMenu == 'filters'">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2m4 0h10M14 4v6M8 14v6"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
+                            <span><?php echo app('translator')->get('Filters'); ?></span>
+                            <span class="match-filter-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div v-if="openFeedMenu == 'filters'" class="match-filter-popover">
+                            <label class="match-filter-check">
+                                <input type="checkbox" v-model="onlyAvailableOdds">
+                                <span><?php echo app('translator')->get('Only show matches with available odds'); ?></span>
+                            </label>
+                            <button type="button" class="match-filter-reset" @click="resetFeedFilters"><?php echo app('translator')->get('Reset filters'); ?></button>
+                        </div>
+                    </div>
+
+                    <div class="match-filter-menu">
+                        <button type="button" class="match-filter-button"
+                                @click="toggleFeedMenu('date')"
+                                :aria-expanded="openFeedMenu == 'date'">
+                            <span>{{ dateFilter == 'today' ? '<?php echo app('translator')->get('Today'); ?>' : '<?php echo app('translator')->get('All dates'); ?>' }}</span>
+                            <span class="match-filter-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div v-if="openFeedMenu == 'date'" class="match-filter-popover">
+                            <button type="button" @click="setDateFilter('today')"><?php echo app('translator')->get('Today'); ?></button>
+                            <button type="button" @click="setDateFilter('all')"><?php echo app('translator')->get('All dates'); ?></button>
+                        </div>
+                    </div>
+
+                    <div class="match-filter-menu">
+                        <button type="button" class="match-filter-button"
+                                @click="toggleFeedMenu('group')"
+                                :aria-expanded="openFeedMenu == 'group'">
+                            <span>{{ marketGroupFilter == 'highlights' ? '<?php echo app('translator')->get('Highlights'); ?>' : '<?php echo app('translator')->get('All matches'); ?>' }}</span>
+                            <span class="match-filter-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div v-if="openFeedMenu == 'group'" class="match-filter-popover">
+                            <button type="button" @click="setMarketGroupFilter('highlights')"><?php echo app('translator')->get('Highlights'); ?></button>
+                            <button type="button" @click="setMarketGroupFilter('all')"><?php echo app('translator')->get('All matches'); ?></button>
+                        </div>
+                    </div>
+
+                    <div class="match-filter-menu">
+                        <button type="button" class="match-filter-button"
+                                @click="toggleFeedMenu('market')"
+                                :aria-expanded="openFeedMenu == 'market'">
+                            <span>{{ oddsMarketFilter == '1x2' ? '1x2' : '<?php echo app('translator')->get('All markets'); ?>' }}</span>
+                            <span class="match-filter-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div v-if="openFeedMenu == 'market'" class="match-filter-popover">
+                            <button type="button" @click="setOddsMarketFilter('1x2')">1x2</button>
+                            <button type="button" @click="setOddsMarketFilter('all')"><?php echo app('translator')->get('All markets'); ?></button>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            <?php else: ?>
+                <div class="match-feed-controls">
+                    <h1 class="feed-title"><?php echo app('translator')->get('Match markets'); ?></h1>
+                    <div class="feed-switch" role="group" aria-label="<?php echo app('translator')->get('Match timing'); ?>">
+                        <button type="button" @click="liveUpComing('live')" :class="{active: showType == 'live'}" :aria-pressed="showType == 'live'"><?php echo app('translator')->get('Live'); ?></button>
+                        <button type="button" @click="liveUpComing('upcoming')" :class="{active: showType == 'upcoming'}" :aria-pressed="showType == 'upcoming'"><?php echo app('translator')->get('Upcoming'); ?></button>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <?php echo $__env->make($theme.'partials.home.slider', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
             <?php if(Request::routeIs('match')): ?>
                 <?php echo $__env->make($theme.'partials.home.match', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
             <?php else: ?>
+                <div class="match-feed-columns" aria-hidden="true">
+                    <span><?php echo app('translator')->get('Teams'); ?></span>
+                    <div><span>1</span><span>X</span><span>2</span></div>
+                </div>
                 <?php echo $__env->make($theme.'partials.home.content', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
             <?php endif; ?>
 
@@ -105,7 +187,12 @@
                 form: {
                     amount: ''
                 },
-                showType: 'live'
+                showType: 'live',
+                openFeedMenu: null,
+                dateFilter: 'today',
+                marketGroupFilter: 'highlights',
+                oddsMarketFilter: '1x2',
+                onlyAvailableOdds: false
             },
             mounted() {
                 var showType = localStorage.getItem('showType');
@@ -373,12 +460,81 @@
                         });
                     });
                 },
+                visibleMatches(items) {
+                    var matches = Array.isArray(items) ? items : [];
+                    var today = new Date().toDateString();
+                    var _this = this;
+
+                    return matches.filter(function (match) {
+                        if (_this.dateFilter == 'today') {
+                            var startDate = new Date(match.start_date);
+                            if (isNaN(startDate.getTime()) || startDate.toDateString() !== today) {
+                                return false;
+                            }
+                        }
+
+                        var questions = Array.isArray(match.questions) ? match.questions : [];
+                        var hasOdds = questions.some(function (question) {
+                            return Array.isArray(question.options) && question.options.length > 0;
+                        });
+                        if (_this.marketGroupFilter == 'highlights' && !hasOdds) {
+                            return false;
+                        }
+                        if (_this.onlyAvailableOdds) {
+                            var hasUnlockedOdds = questions.some(function (question) {
+                                return (question.options || []).some(function (option) {
+                                    return option.is_unlock_question != 1 && option.is_unlock_match != 1;
+                                });
+                            });
+                            if (!hasUnlockedOdds) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
+                },
+                visibleQuestions(items) {
+                    var questions = Array.isArray(items) ? items : [];
+                    if (this.oddsMarketFilter == '1x2') {
+                        var matchResult = questions.find(function (question) {
+                            return /1\\s*x\\s*2|match\\s*(winner|result)|full\\s*time\\s*result/i.test(question.name || '');
+                        });
+                        return matchResult ? [matchResult] : questions.slice(0, 1);
+                    }
+                    return questions.slice(0, 3);
+                },
                 slicedArray(items) {
-                    return  Object.values(items)[0];
+                    return this.visibleQuestions(items)[0] || { options: [] };
+                },
+                toggleFeedMenu(menu) {
+                    this.openFeedMenu = this.openFeedMenu == menu ? null : menu;
+                },
+                setDateFilter(filter) {
+                    this.dateFilter = filter;
+                    this.openFeedMenu = null;
+                },
+                setMarketGroupFilter(filter) {
+                    this.marketGroupFilter = filter;
+                    this.openFeedMenu = null;
+                },
+                setOddsMarketFilter(filter) {
+                    this.oddsMarketFilter = filter;
+                    this.openFeedMenu = null;
+                },
+                resetFeedFilters() {
+                    this.dateFilter = 'today';
+                    this.marketGroupFilter = 'highlights';
+                    this.oddsMarketFilter = '1x2';
+                    this.onlyAvailableOdds = false;
+                    this.openFeedMenu = null;
+                },
+                selectCompetitionTab(tab) {
+                    this.liveUpComing(tab == 'upcoming' ? 'upcoming' : 'live');
                 },
                 liveUpComing(type){
                     localStorage.setItem("showType", type);
-                    this.showType = type
+                    this.showType = type;
+                    this.openFeedMenu = null;
                 }
 
 

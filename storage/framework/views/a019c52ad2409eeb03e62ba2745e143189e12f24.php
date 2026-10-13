@@ -1,5 +1,5 @@
 <!-- live match table -->
-<div v-if="showType == 'live'"  v-for="(item, index) in allSports_filter" class="table-parent table-responsive d-sm-block d-none">
+<div v-if="showType == 'live'"  v-for="(item, index) in visibleMatches(allSports_filter)" class="table-parent table-responsive d-sm-block d-none">
 
     <table class="table table-striped">
         <thead>
@@ -13,7 +13,7 @@
                </span>
             </th>
 
-            <th v-if="index <= 2" class="col-2" v-for="(question, index) in item.questions">
+            <th v-if="index <= 2" class="col-2" v-for="(question, index) in visibleQuestions(item.questions)">
                 <div class="d-flex justify-content-evenly">
                     <span><?php echo app('translator')->get('1'); ?></span>
                     <span>{{question.name}}</span>
@@ -21,8 +21,8 @@
                 </div>
             </th>
 
-            <template v-if="3 > (item.questions).length ">
-                <th class="col-2" v-for="index in (3 - (item.questions).length )"
+            <template v-if="3 > visibleQuestions(item.questions).length ">
+                <th class="col-2" v-for="index in (3 - visibleQuestions(item.questions).length)"
                     :key="index">
                     <div class="d-flex justify-content-evenly">
                         <span>1</span>
@@ -62,7 +62,7 @@
                 </p>
             </td>
 
-            <td v-if="index <= 2" v-for="(question, index) in item.questions">
+            <td v-if="index <= 2" v-for="(question, index) in visibleQuestions(item.questions)">
                 <div class="d-flex justify-content-evenly w-100">
                     <button type="button" :disabled="option.is_unlock_question == 1 || option.is_unlock_match == 1 "
                             :class="{ disabled: (option.is_unlock_question == 1 || option.is_unlock_match == 1) }"
@@ -80,8 +80,8 @@
 
             </td>
 
-            <template v-if="3 > (item.questions).length ">
-                <td v-for="index in (3 - (item.questions).length )" :key="index">
+            <template v-if="3 > visibleQuestions(item.questions).length ">
+                <td v-for="index in (3 - visibleQuestions(item.questions).length)" :key="index">
                     <div class="d-flex justify-content-evenly w-100">
                         <button type="button" class="disabled downgrade">-</button>
                         <button type="button" class="disabled downgrade">-</button>
@@ -98,7 +98,7 @@
 
 
 <!-- Upcoming match table -->
-<div  v-if="showType == 'upcoming'"  v-for="(item, index) in upcoming_filter" class="table-parent table-responsive d-sm-block d-none">
+<div  v-if="showType == 'upcoming'"  v-for="(item, index) in visibleMatches(upcoming_filter)" class="table-parent table-responsive d-sm-block d-none">
     <table class="table table-striped">
         <thead>
         <tr>
@@ -111,7 +111,7 @@
                </span>
             </th>
 
-            <th v-if="index <= 2" class="col-2" v-for="(question, index) in item.questions">
+            <th v-if="index <= 2" class="col-2" v-for="(question, index) in visibleQuestions(item.questions)">
                 <div class="d-flex justify-content-evenly">
                     <span><?php echo app('translator')->get('1'); ?></span>
                     <span>{{question.name}}</span>
@@ -119,8 +119,8 @@
                 </div>
             </th>
 
-            <template v-if="3 > (item.questions).length ">
-                <th class="col-2" v-for="index in (3 - (item.questions).length )"
+            <template v-if="3 > visibleQuestions(item.questions).length ">
+                <th class="col-2" v-for="index in (3 - visibleQuestions(item.questions).length)"
                     :key="index">
                     <div class="d-flex justify-content-evenly">
                         <span><?php echo app('translator')->get('1'); ?></span>
@@ -160,7 +160,7 @@
                 </p>
             </td>
 
-            <td v-if="index <= 2" v-for="(question, index) in item.questions">
+            <td v-if="index <= 2" v-for="(question, index) in visibleQuestions(item.questions)">
                 <div class="d-flex justify-content-evenly w-100">
                     <button type="button" :disabled="option.is_unlock_question == 1 || option.is_unlock_match == 1 "
                             :class="{ disabled: (option.is_unlock_question == 1 || option.is_unlock_match == 1) }"
@@ -178,8 +178,8 @@
 
             </td>
 
-            <template v-if="3 > (item.questions).length ">
-                <td v-for="index in (3 - (item.questions).length )" :key="index">
+            <template v-if="3 > visibleQuestions(item.questions).length ">
+                <td v-for="index in (3 - visibleQuestions(item.questions).length)" :key="index">
                     <div class="d-flex justify-content-evenly w-100">
                         <button type="button" class="disabled downgrade">-</button>
                         <button type="button" class="disabled downgrade">-</button>
@@ -195,7 +195,7 @@
 </div>
 
 <div class="match-feed-mobile" v-if="showType == 'live'">
-    <article class="match-card" v-for="(item, index) in allSports_filter" :key="'live-mobile-' + item.id">
+    <article class="match-card" v-for="(item, index) in visibleMatches(allSports_filter)" :key="'live-mobile-' + item.id">
         <div class="match-card-meta">
             <span class="match-card-league"><span v-html="item.game_category.icon"></span> {{ item.game_tournament.name }}<span v-if="item.name"> · {{ item.name }}</span></span>
             <span class="match-card-time"><?php echo app('translator')->get('Live'); ?></span>
@@ -226,11 +226,11 @@
             <button type="button" @click="goMatch(item)">+{{ item.questions.length }} <?php echo app('translator')->get('Markets'); ?></button>
         </div>
     </article>
-    <div class="feed-empty" v-if="allSports_filter.length == 0"><?php echo app('translator')->get('No live matches available'); ?></div>
+    <div class="feed-empty" v-if="visibleMatches(allSports_filter).length == 0"><?php echo app('translator')->get('No matches match these filters'); ?></div>
 </div>
 
 <div class="match-feed-mobile" v-if="showType == 'upcoming'">
-    <article class="match-card" v-for="(item, index) in upcoming_filter" :key="'upcoming-mobile-' + item.id">
+    <article class="match-card" v-for="(item, index) in visibleMatches(upcoming_filter)" :key="'upcoming-mobile-' + item.id">
         <div class="match-card-meta">
             <span class="match-card-league"><span v-html="item.game_category.icon"></span> {{ item.game_tournament.name }}<span v-if="item.name"> · {{ item.name }}</span></span>
             <span class="match-card-time"><?php echo app('translator')->get('Upcoming'); ?></span>
@@ -261,6 +261,6 @@
             <button type="button" @click="goMatch(item)">+{{ item.questions.length }} <?php echo app('translator')->get('Markets'); ?></button>
         </div>
     </article>
-    <div class="feed-empty" v-if="upcoming_filter.length == 0"><?php echo app('translator')->get('No upcoming matches available'); ?></div>
+    <div class="feed-empty" v-if="visibleMatches(upcoming_filter).length == 0"><?php echo app('translator')->get('No matches match these filters'); ?></div>
 </div>
 <?php /**PATH /home/runner/workspace/resources/views/themes/betting/partials/home/content.blade.php ENDPATH**/ ?>
