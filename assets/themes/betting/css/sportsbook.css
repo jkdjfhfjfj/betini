@@ -1941,3 +1941,7 @@ body.auth-screen .login-section.auth-page { padding-top: 24px; }
 @media (max-width: 370px) {
     .bottom-bar > .bottom-theme-toggle .nav-label { font-size: 8px; }
 }
+
+@media (min-width: 768px) {
+    .navbar .navbar-toggler { display: none !important; }
+}
