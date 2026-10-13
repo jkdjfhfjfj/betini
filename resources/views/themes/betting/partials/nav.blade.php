@@ -154,7 +154,8 @@
                 @endauth
 
                 @guest
-                <!-- login register button -->
+                <!-- Hide duplicate modal actions on the dedicated auth screens. -->
+                @if(!Request::routeIs('login', 'register', 'register.sponsor'))
                     <button
                         class="btn-custom"
                         data-bs-toggle="modal"
@@ -167,6 +168,7 @@
                         data-bs-target="#loginModal">
                         @lang('Login')
                     </button>
+                @endif
                 @endguest
             </div>
         </div>

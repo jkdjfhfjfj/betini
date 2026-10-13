@@ -1,14 +1,16 @@
 @extends($theme.'layouts.app')
 @section('title','Login')
 @section('content')
-    <section class="login-section">
+    <section class="login-section auth-page auth-login-page">
         <div class="container-fluid h-100">
             <div class="row h-100">
                 <div class="col-lg-6 p-0">
                     <div class="text-box h-100">
                         <div class="overlay h-100">
                             <div class="text">
+                                <span class="auth-eyebrow">@lang('PROPHECY SPORTS')</span>
                                 <h2>@lang('Sign in to your account')</h2>
+                                <p>@lang('Pick up where you left off. Your bets and wallet are ready when you are.')</p>
                                 <a href="{{route('home')}}">@lang('back to home')</a>
                             </div>
                         </div>
@@ -16,21 +18,27 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="form-wrapper d-flex align-items-center h-100">
-                        <form action="{{ route('login') }}" method="post">
+                        <form action="{{ route('login') }}" method="post" class="auth-form-card">
                             @csrf
                             <div class="row g-4">
-                                <div class="col-12">
-                                    <h4>@lang('Login here')</h4>
+                                <div class="col-12 auth-form-heading">
+                                    <span class="auth-eyebrow">@lang('PLAYER ACCOUNT')</span>
+                                    <h4>@lang('Welcome back')</h4>
+                                    <p>@lang('Sign in to continue to your account.')</p>
                                 </div>
                                 <div class="input-box col-12">
+                                    <label class="auth-field-label" for="login-identity">@lang('Email or username')</label>
                                     <input type="text" class="form-control" name="username"
-                                           placeholder="@lang('Email Or Username')"/>
+                                           id="login-identity" autocomplete="username"
+                                           placeholder="@lang('Enter your email or username')" required/>
                                     @error('username')<span class="text-danger  mt-1">{{ $message }}</span>@enderror
                                     @error('email')<span class="text-danger  mt-1">{{ $message }}</span>@enderror
                                 </div>
                                 <div class="input-box col-12">
+                                    <label class="auth-field-label" for="login-password">@lang('Password')</label>
                                     <input type="password" class="form-control" name="password"
-                                           placeholder="@lang('Password')"/>
+                                           id="login-password" autocomplete="current-password"
+                                           placeholder="@lang('Enter your password')" required/>
                                     @error('password')
                                     <span class="text-danger mt-1">{{ $message }}</span>
                                     @enderror
@@ -63,7 +71,7 @@
                                 </div>
                             </div>
 
-                            <button class="btn-custom w-100">@lang('sign in')</button>
+                            <button type="submit" class="btn-custom auth-submit w-100">@lang('Sign in')</button>
                             <div class="bottom">
                                 @lang("Don't have an account?")
 
@@ -80,9 +88,10 @@
 @push('style')
     <style>
         .modal .text-box,
-        .login-section .text-box {
-            background: url({{getFile(config('location.logo.path').'loginImage.png')}});
-            background-size: cover;
+            .login-section .text-box {
+                background-image: url({{getFile(config('location.logo.path').'loginImage.png')}});
+                background-size: cover;
+                background-position: center;
         }
     </style>
 @endpush
