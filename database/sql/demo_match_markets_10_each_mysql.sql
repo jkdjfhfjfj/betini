@@ -1,5 +1,7 @@
 -- Add ten sample markets and sample odds to every LOCAL DEMO MATCH in
--- Local Preview League. MySQL / MariaDB.
+-- Local Preview League. Options such as match result and double chance use
+-- the actual international home/away club names on each fixture.
+-- MySQL / MariaDB.
 --
 -- The sample questions and odds are active for display, but each question has
 -- is_unlock = 1 and the demo matches are expected to have is_unlock = 1.
@@ -29,7 +31,7 @@ INSERT INTO tmp_demo_market_seed (`market_no`, `market_name`) VALUES
     (7, 'First Half Result'),
     (8, 'Draw No Bet'),
     (9, 'Correct Score'),
-    (10, 'Total Goals Bands');
+    (10, 'First Team To Score');
 
 CREATE TEMPORARY TABLE tmp_demo_market_option_seed (
     `market_no` TINYINT UNSIGNED NOT NULL,
@@ -46,9 +48,9 @@ INSERT INTO tmp_demo_market_option_seed
     (1, 2, 'Draw', 3.20),
     (1, 3, '@AWAY', 3.25),
     -- Double Chance
-    (2, 1, 'Home or Draw (1X)', 1.32),
-    (2, 2, 'Home or Away (12)', 1.30),
-    (2, 3, 'Draw or Away (X2)', 1.62),
+    (2, 1, '@HOME_OR_DRAW', 1.32),
+    (2, 2, '@HOME_OR_AWAY', 1.30),
+    (2, 3, '@DRAW_OR_AWAY', 1.62),
     -- Both Teams To Score
     (3, 1, 'Yes', 1.82),
     (3, 2, 'No', 1.90),
@@ -72,10 +74,10 @@ INSERT INTO tmp_demo_market_option_seed
     (9, 1, '1-0', 7.50),
     (9, 2, '1-1', 6.25),
     (9, 3, '0-1', 8.50),
-    -- Total Goals Bands
-    (10, 1, '0-1 Goals', 2.70),
-    (10, 2, '2-3 Goals', 1.95),
-    (10, 3, '4+ Goals', 3.40);
+    -- First Team To Score
+    (10, 1, '@HOME', 2.05),
+    (10, 2, 'No Goal', 8.00),
+    (10, 3, '@AWAY', 2.20);
 
 CREATE TEMPORARY TABLE tmp_demo_question_map (
     `match_id` BIGINT UNSIGNED NOT NULL,
@@ -108,7 +110,7 @@ SET @demo_tournament_id := (
 
 -- MatchController creates markets using the authenticated admin ID. Use an
 -- existing admin ID for the same creator_id field.
-SET @demo_creator_id := (SELECT MIN(admin.`id`) FROM `admins` admin);
+SET @demo_creator_id := (SELECT MIN(admin_row.`id`) FROM `admins` admin_row);
 
 START TRANSACTION;
 
@@ -163,13 +165,16 @@ WHERE @demo_tournament_id IS NOT NULL
   AND match_row.`end_date` > CURRENT_TIMESTAMP
 GROUP BY match_row.`id`, market.`market_no`;
 
--- Replace @HOME and @AWAY with the actual team names for each fixture.
+-- Replace team placeholders with the actual names from each fixture.
 INSERT INTO `tmp_demo_resolved_options` (`question_id`, `option_name`, `ratio`)
 SELECT
     question_map.`question_id`,
     CASE option_seed.`option_label`
         WHEN '@HOME' THEN home_team.`name`
         WHEN '@AWAY' THEN away_team.`name`
+        WHEN '@HOME_OR_DRAW' THEN CONCAT(home_team.`name`, ' or Draw (1X)')
+        WHEN '@HOME_OR_AWAY' THEN CONCAT(home_team.`name`, ' or ', away_team.`name`, ' (12)')
+        WHEN '@DRAW_OR_AWAY' THEN CONCAT('Draw or ', away_team.`name`, ' (X2)')
         ELSE option_seed.`option_label`
     END,
     option_seed.`ratio`
