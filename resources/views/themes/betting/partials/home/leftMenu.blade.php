@@ -4,6 +4,13 @@
 @endphp
 
 <ul class="main">
+    <li class="px-2 py-2">
+        <input type="search"
+               class="form-control form-control-sm tournament-search"
+               v-model.trim="tournamentSearch"
+               aria-label="@lang('Search tournaments')"
+               placeholder="@lang('Search tournaments')">
+    </li>
     <li>
         <a  @if(Request::routeIs('home')) class="active" @endif
             href="{{route('home')}}">
@@ -28,10 +35,12 @@
             </a>
             <!-- dropdown item -->
 
-            <div class="collapse {{($loop->index == 0) ? 'show' :''}}" id="collapse{{$gameCategory->id}}">
+            <div class="collapse {{($loop->index == 0) ? 'show' :''}}"
+                 :class="{'show': tournamentSearch.trim().length > 0}"
+                 id="collapse{{$gameCategory->id}}">
                 <ul class="">
                     @forelse($gameCategory->activeTournament as $tItem)
-                        <li>
+                        <li v-show='tournamentMatches(@json($tItem->name), tournamentSearch)'>
                             <a href="{{route('tournament',[slug($tItem->name) , $tItem->id ])}}" class="sidebar-link {{( Request::routeIs('tournament') && $last == $tItem->id) ? 'active' : '' }}">
                                 <i class="far fa-hand-point-right"></i> {{$tItem->name}}</a>
                         </li>

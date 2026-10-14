@@ -123,4 +123,48 @@ class MatchFeedSectionsTest extends TestCase
         $this->assertSame('Kenya', $feed['allList'][0]['country']);
         $this->assertSame(['new', 'zoom-soccer'], $feed['allList'][0]['sections']);
     }
+
+    public function test_match_feed_returns_matches_across_many_tournaments_without_a_page_limit()
+    {
+        DB::table('game_categories')->insert([
+            'id' => 1,
+            'name' => 'Football',
+            'status' => 1,
+        ]);
+        DB::table('game_teams')->insert([
+            ['id' => 1, 'name' => 'Home FC'],
+            ['id' => 2, 'name' => 'Away FC'],
+        ]);
+
+        $tournamentRows = [];
+        for ($id = 1; $id <= 25; $id++) {
+            $tournamentRows[] = [
+                'id' => $id,
+                'name' => 'Tournament ' . $id,
+                'status' => 1,
+            ];
+        }
+        DB::table('game_tournaments')->insert($tournamentRows);
+
+        $start = Carbon::now()->addHour();
+        for ($id = 1; $id <= 25; $id++) {
+            $match = new GameMatch();
+            $match->category_id = 1;
+            $match->tournament_id = $id;
+            $match->team1_id = 1;
+            $match->team2_id = 2;
+            $match->name = 'Fixture ' . $id;
+            $match->start_date = $start->copy()->addMinutes($id);
+            $match->end_date = $start->copy()->addDays(1);
+            $match->status = 1;
+            $match->is_unlock = 1;
+            $match->save();
+        }
+
+        $response = (new GameFetchController())->index();
+        $feed = json_decode($response->getContent(), true);
+
+        $this->assertCount(25, $feed['allList']);
+        $this->assertCount(25, $feed['upcomingList']);
+    }
 }

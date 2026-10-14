@@ -1,5 +1,5 @@
 <!-- live match table -->
-<div v-if="showType == 'live'"  v-for="(item, index) in visibleMatches(allSports_filter)" class="table-parent table-responsive d-sm-block d-none">
+<div v-if="showType != 'upcoming'"  v-for="(item, index) in visibleMatches(allSports_filter)" class="table-parent table-responsive d-sm-block d-none">
 
     <table class="table table-striped">
         <thead>
@@ -98,7 +98,7 @@
 
 
 <!-- Upcoming match table -->
-<div  v-if="showType == 'upcoming'"  v-for="(item, index) in visibleMatches(upcoming_filter)" class="table-parent table-responsive d-sm-block d-none">
+<div  v-if="showType != 'live'"  v-for="(item, index) in visibleMatches(upcoming_filter)" class="table-parent table-responsive d-sm-block d-none">
     <table class="table table-striped">
         <thead>
         <tr>
@@ -194,7 +194,7 @@
     </table>
 </div>
 
-<div class="match-feed-mobile" v-if="showType == 'live'">
+<div class="match-feed-mobile" v-if="showType != 'upcoming'">
     <article class="match-card" v-for="(item, index) in visibleMatches(allSports_filter)" :key="'live-mobile-' + item.id">
         <div class="match-card-meta">
             <span class="match-card-league"><span v-html="item.game_category.icon"></span> @{{ item.game_tournament.name }}<span v-if="item.name"> · @{{ item.name }}</span></span>
@@ -226,10 +226,10 @@
             <button type="button" @click="goMatch(item)">+@{{ item.questions.length }} @lang('Markets')</button>
         </div>
     </article>
-    <div class="feed-empty" v-if="visibleMatches(allSports_filter).length == 0">@lang('No matches match these filters')</div>
+    <div class="feed-empty" v-if="showType == 'live' && visibleMatches(allSports_filter).length == 0">@lang('No matches match these filters')</div>
 </div>
 
-<div class="match-feed-mobile" v-if="showType == 'upcoming'">
+<div class="match-feed-mobile" v-if="showType != 'live'">
     <article class="match-card" v-for="(item, index) in visibleMatches(upcoming_filter)" :key="'upcoming-mobile-' + item.id">
         <div class="match-card-meta">
             <span class="match-card-league"><span v-html="item.game_category.icon"></span> @{{ item.game_tournament.name }}<span v-if="item.name"> · @{{ item.name }}</span></span>
@@ -261,5 +261,10 @@
             <button type="button" @click="goMatch(item)">+@{{ item.questions.length }} @lang('Markets')</button>
         </div>
     </article>
-    <div class="feed-empty" v-if="visibleMatches(upcoming_filter).length == 0">@lang('No matches match these filters')</div>
+    <div class="feed-empty" v-if="showType == 'upcoming' && visibleMatches(upcoming_filter).length == 0">@lang('No matches match these filters')</div>
+</div>
+
+<div class="feed-empty d-sm-none"
+     v-if="showType == 'all' && visibleMatches(allSports_filter).length == 0 && visibleMatches(upcoming_filter).length == 0">
+    @lang('No matches match these filters')
 </div>

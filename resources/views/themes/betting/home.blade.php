@@ -159,6 +159,10 @@
                 </div>
                 @include($theme.'partials.home.content')
                 <div class="match-feed-empty-desktop d-none d-sm-block"
+                     v-if="showType == 'all' && visibleMatches(allSports_filter).length == 0 && visibleMatches(upcoming_filter).length == 0">
+                    @lang('No matches match these filters')
+                </div>
+                <div class="match-feed-empty-desktop d-none d-sm-block"
                      v-if="showType == 'live' && visibleMatches(allSports_filter).length == 0">
                     @lang('No matches match these filters')
                 </div>
@@ -198,6 +202,9 @@
 
     <script src="{{ asset('assets/themes/betting/js/match-feed-filters.js') }}?v={{ filemtime(base_path('assets/themes/betting/js/match-feed-filters.js')) }}"></script>
     <script>
+        var matchFeedDefaults = MatchFeedFilters.defaultFilters();
+        var isMatchDetail = @json(Request::routeIs('match'));
+
         let getMatchList = new Vue({
             el: "#getMatchList",
             data: {
@@ -219,22 +226,33 @@
                 form: {
                     amount: ''
                 },
-                showType: 'live',
-                activeSection: 'highlights',
-                countryFilter: '',
+                showType: 'all',
+                activeSection: matchFeedDefaults.section,
+                countryFilter: matchFeedDefaults.country,
                 openFeedMenu: null,
-                dateFilter: 'today',
-                marketGroupFilter: 'highlights',
-                oddsMarketFilter: '1x2',
-                onlyAvailableOdds: false
+                dateFilter: matchFeedDefaults.dateFilter,
+                marketGroupFilter: matchFeedDefaults.marketGroupFilter,
+                oddsMarketFilter: matchFeedDefaults.oddsMarketFilter,
+                onlyAvailableOdds: matchFeedDefaults.onlyAvailableOdds,
+                tournamentSearch: ''
             },
             mounted() {
-                var showType = localStorage.getItem('showType');
-                if (showType == null) {
-                    localStorage.setItem("showType", 'live');
+                var savedView = localStorage.getItem('matchFeedDisplayMode');
+                if (isMatchDetail) {
+                    if (savedView !== 'live' && savedView !== 'upcoming') {
+                        savedView = localStorage.getItem('showType');
+                    }
+                    if (savedView !== 'live' && savedView !== 'upcoming') {
+                        savedView = 'live';
+                    }
+                } else if (savedView !== 'live' && savedView !== 'upcoming' && savedView !== 'all') {
+                    savedView = 'all';
                 }
-                this.showType = localStorage.getItem("showType") || 'live'
-                this.activeSection = this.showType == 'upcoming' ? 'upcoming' : 'highlights';
+                this.showType = savedView;
+                this.activeSection = this.showType == 'upcoming'
+                    ? 'upcoming'
+                    : (this.showType == 'live' ? 'highlights' : 'all');
+                localStorage.setItem('matchFeedDisplayMode', this.showType);
 
                 this.getMatches();
                 this.getSlip();
@@ -510,15 +528,17 @@
                     var section = ['countries', 'zoom-soccer', 'jackpots', 'new', 'turbo'].indexOf(this.activeSection) !== -1
                         ? this.activeSection
                         : null;
-                    var matches = section ? this.allMatches_filter : items;
 
-                    return MatchFeedFilters.filterMatches(matches, {
+                    return MatchFeedFilters.filterMatches(items, {
                         dateFilter: this.dateFilter,
                         marketGroupFilter: this.marketGroupFilter,
                         onlyAvailableOdds: this.onlyAvailableOdds,
                         section: section,
                         country: section == 'countries' ? this.countryFilter : ''
                     });
+                },
+                tournamentMatches(name, search) {
+                    return MatchFeedFilters.matchesTournamentSearch(name, search);
                 },
                 countryOptions() {
                     var countries = this.allMatches_filter
@@ -553,15 +573,21 @@
                     this.openFeedMenu = null;
                 },
                 resetFeedFilters() {
-                    this.dateFilter = 'all';
-                    this.marketGroupFilter = 'all';
-                    this.oddsMarketFilter = 'all';
-                    this.onlyAvailableOdds = false;
-                    this.countryFilter = '';
+                    var defaults = MatchFeedFilters.defaultFilters();
+                    this.activeSection = defaults.section;
+                    this.dateFilter = defaults.dateFilter;
+                    this.marketGroupFilter = defaults.marketGroupFilter;
+                    this.oddsMarketFilter = defaults.oddsMarketFilter;
+                    this.onlyAvailableOdds = defaults.onlyAvailableOdds;
+                    this.countryFilter = defaults.country;
+                    this.showType = 'all';
+                    localStorage.setItem('matchFeedDisplayMode', 'all');
                     this.openFeedMenu = null;
                 },
                 allFiltersActive() {
-                    return this.dateFilter === 'all'
+                    return this.activeSection === 'all'
+                        && this.showType === 'all'
+                        && this.dateFilter === 'all'
                         && this.marketGroupFilter === 'all'
                         && this.oddsMarketFilter === 'all'
                         && !this.onlyAvailableOdds
@@ -577,13 +603,15 @@
                     }
 
                     this.activeSection = tab;
-                    this.showType = 'live';
-                    localStorage.setItem('showType', 'live');
+                    this.showType = 'all';
+                    localStorage.setItem('matchFeedDisplayMode', 'all');
                 },
                 liveUpComing(type){
-                    localStorage.setItem("showType", type);
+                    localStorage.setItem('matchFeedDisplayMode', type);
                     this.showType = type;
-                    this.activeSection = type == 'upcoming' ? 'upcoming' : 'highlights';
+                    this.activeSection = type == 'upcoming'
+                        ? 'upcoming'
+                        : (type == 'all' ? 'all' : 'highlights');
                     this.openFeedMenu = null;
                 }
 

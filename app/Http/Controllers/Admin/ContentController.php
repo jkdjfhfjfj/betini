@@ -53,7 +53,8 @@ class ContentController extends Controller
             $purifiedData['thumbnail'] = $request->file('thumbnail');
         }
 
-        $validate = Validator::make($purifiedData, config("contents.$content.validation"), config('contents.message'));
+        $validationData = array_replace_recursive($purifiedData, $request->allFiles());
+        $validate = Validator::make($validationData, config("contents.$content.validation"), config('contents.message'));
 
         if ($validate->fails()) {
             return back()->withInput()->withErrors($validate);
@@ -81,12 +82,11 @@ class ContentController extends Controller
         }
 
         // save content media
-        $hasContentMedia = $request->hasAny(array_keys(config('contents.content_media')))
-            || $request->hasFile('image')
-            || $request->hasFile('thumbnail');
+        $hasContentMedia = $this->hasContentMediaInput($request, $language);
 
         if ($hasContentMedia) {
             $contentMedia = new ContentMedia();
+            $contentMediaDescription = [];
 
             foreach (config('contents.content_media') as $key => $media) {
                 $uploadedFile = $request->file($key . '.' . $language);
@@ -101,7 +101,7 @@ class ContentController extends Controller
                     }
 
                     $contentMediaDescription[$key] = $this->uploadImage($uploadedFile, config('location.content.path'), $size, null, $thumb);
-                } elseif ($request->has($key)) {
+                } elseif (\Illuminate\Support\Arr::has($request->all(), $key . '.' . $language)) {
                     $mediaValue = data_get($purifiedData, $key . '.' . $language);
                     $contentMediaDescription[$key] = trim((string) $mediaValue) === '' ? null : linkToEmbed($mediaValue);
                 }
@@ -145,7 +145,8 @@ class ContentController extends Controller
             $purifiedData['thumbnail'] = $request->file('thumbnail');
         }
 
-        $validate = Validator::make($purifiedData, config("contents.$content->name.validation"), config('contents.message'));
+        $validationData = array_replace_recursive($purifiedData, $request->allFiles());
+        $validate = Validator::make($validationData, config("contents.$content->name.validation"), config('contents.message'));
         if ($validate->fails()) {
             return back()->withInput()->withErrors($validate);
         }
@@ -168,16 +169,14 @@ class ContentController extends Controller
 
 
         // save contents media
-        $hasContentMedia = $request->hasAny(array_keys(config('contents.content_media')))
-            || $request->hasFile('image')
-            || $request->hasFile('thumbnail');
+        $hasContentMedia = $this->hasContentMediaInput($request, $language);
 
         if ($hasContentMedia) {
-            $contentMedia = ContentMedia::where(['content_id' => $content->id])->firstOrNew();
+            $contentMedia = ContentMedia::firstOrNew(['content_id' => $content->id]);
             $contentMediaDescription = (array)($contentMedia->description ?: []);
 
             foreach (config('contents.content_media') as $key => $media) {
-                $old_data = $contentMediaDescription[$key] ?? (optional($contentMedia->description)->{$key} ?? null);
+                $old_data = $contentMediaDescription[$key] ?? null;
                 $uploadedFile = $request->file($key . '.' . $language);
                 if ($uploadedFile) {
                     $size =  null;
@@ -190,7 +189,7 @@ class ContentController extends Controller
                     }
 
                     $contentMediaDescription[$key] = $this->uploadImage($uploadedFile, config('location.content.path'), $size, $old_data, $thumb);
-                } elseif ($request->has($key)) {
+                } elseif (\Illuminate\Support\Arr::has($request->all(), $key . '.' . $language)) {
                     $mediaValue = data_get($purifiedData, $key . '.' . $language);
                     $contentMediaDescription[$key] = trim((string)$mediaValue) === '' ? null : linkToEmbed($mediaValue);
                 } elseif (isset($old_data)) {
@@ -206,6 +205,24 @@ class ContentController extends Controller
         }
 
         return back()->with('success', 'Content Details Successfully Saved');
+    }
+
+    /**
+     * Content media fields are posted as language-indexed inputs (for example
+     * image[1]), so checking only top-level file names misses uploaded images.
+     */
+    private function hasContentMediaInput(Request $request, $language): bool
+    {
+        $allInput = $request->all();
+
+        foreach (array_keys(config('contents.content_media', [])) as $key) {
+            $field = $key . '.' . $language;
+            if ($request->file($field) || \Illuminate\Support\Arr::has($allInput, $field)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function contentDelete($id)

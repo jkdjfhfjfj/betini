@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { filterMatches, selectQuestions } = require('../../assets/themes/betting/js/match-feed-filters');
+const {
+    defaultFilters,
+    filterMatches,
+    matchesTournamentSearch,
+    selectQuestions
+} = require('../../assets/themes/betting/js/match-feed-filters');
 
 function localDate(year, month, day, hour = 12) {
     return new Date(year, month - 1, day, hour).toISOString();
@@ -13,6 +18,29 @@ function match(id, startDate, options = []) {
         questions: [{ name: 'Match Result', options }]
     };
 }
+
+test('default filter state shows all dates, markets, and sections', () => {
+    assert.deepEqual(defaultFilters(), {
+        section: 'all',
+        country: '',
+        dateFilter: 'all',
+        marketGroupFilter: 'all',
+        oddsMarketFilter: 'all',
+        onlyAvailableOdds: false
+    });
+});
+
+test('All section does not require an admin label or country assignment', () => {
+    const fixtures = [
+        { id: 1, sections: ['jackpots'], country: 'Kenya' },
+        { id: 2, sections: [], country: null }
+    ];
+
+    assert.deepEqual(
+        filterMatches(fixtures, { ...defaultFilters(), section: 'all' }).map(item => item.id),
+        [1, 2]
+    );
+});
 
 test('today filter includes only matches scheduled on the browser local date', () => {
     const today = new Date(2026, 9, 13, 12);
@@ -145,4 +173,10 @@ test('admin-assigned sections only return matches tagged for the selected sectio
             `${section} only returns its assigned fixture`
         );
     }
+});
+
+test('tournament search is optional and case-insensitive', () => {
+    assert.equal(matchesTournamentSearch('Premier League', ''), true);
+    assert.equal(matchesTournamentSearch('Premier League', 'PREMIER'), true);
+    assert.equal(matchesTournamentSearch('Premier League', 'cup'), false);
 });
