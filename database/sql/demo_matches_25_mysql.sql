@@ -9,6 +9,7 @@
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_numbers;
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_teams;
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_resolved_teams;
+DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_resolved_teams_away;
 
 CREATE TEMPORARY TABLE tmp_demo_fixture_numbers (
     `n` TINYINT UNSIGNED NOT NULL PRIMARY KEY
@@ -39,6 +40,14 @@ INSERT INTO tmp_demo_fixture_teams (`team_number`, `name`) VALUES
     (10, 'Highlands FC');
 
 CREATE TEMPORARY TABLE tmp_demo_fixture_resolved_teams (
+    `team_number` TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    `team_id` BIGINT UNSIGNED NOT NULL,
+    `name` VARCHAR(100) NOT NULL
+) ENGINE=MEMORY;
+
+-- MySQL cannot reopen the same temporary table twice in one SELECT, so create
+-- a separate copy for the away-team join below.
+CREATE TEMPORARY TABLE tmp_demo_fixture_resolved_teams_away (
     `team_number` TINYINT UNSIGNED NOT NULL PRIMARY KEY,
     `team_id` BIGINT UNSIGNED NOT NULL,
     `name` VARCHAR(100) NOT NULL
@@ -124,6 +133,11 @@ JOIN `game_teams` team
  AND team.`status` = 1
 GROUP BY seed.`team_number`, seed.`name`;
 
+INSERT INTO `tmp_demo_fixture_resolved_teams_away`
+    (`team_number`, `team_id`, `name`)
+SELECT `team_number`, `team_id`, `name`
+FROM `tmp_demo_fixture_resolved_teams`;
+
 -- Make 25 uniquely named, future fixtures. No markets or betting options are added.
 INSERT INTO `game_matches`
     (`category_id`, `tournament_id`, `team1_id`, `team2_id`, `name`,
@@ -143,7 +157,7 @@ SELECT
 FROM `tmp_demo_fixture_numbers` numbers
 JOIN `tmp_demo_fixture_resolved_teams` home
   ON home.`team_number` = FLOOR((numbers.`n` - 1) / 9) + 1
-JOIN `tmp_demo_fixture_resolved_teams` away
+JOIN `tmp_demo_fixture_resolved_teams_away` away
   ON away.`team_number` = MOD(home.`team_number` + MOD(numbers.`n` - 1, 9), 10) + 1
 WHERE @demo_category_id IS NOT NULL
   AND @demo_tournament_id IS NOT NULL
@@ -163,5 +177,6 @@ WHERE `tournament_id` = @demo_tournament_id
   AND `name` LIKE 'LOCAL DEMO MATCH %';
 
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_resolved_teams;
+DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_resolved_teams_away;
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_teams;
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_numbers;
