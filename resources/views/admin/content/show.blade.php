@@ -164,6 +164,7 @@
                                                                                    placeholder="Choose image"
                                                                                    class="image-preview"
                                                                                    id="content-image-{{ $name }}-{{ $language->id }}"
+                                                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                                                                                    name="{{ $name }}[{{ $language->id }}]">
                                                                             <img id="content-preview-{{ $name }}-{{ $language->id }}"
                                                                                  class="preview-image"
@@ -173,10 +174,13 @@
 
 
                                                                         @if(config("contents.$content->name.size.image"))
-                                                                        <span class="text-muted mb-2">{{trans('Image size should be')}} {{config("contents.$content->name.size.image")}} {{trans('px')}}</span>
+                                                                        <span class="text-muted d-block mb-2">
+                                                                            {{trans('Image size should be')}} {{config("contents.$content->name.size.image")}} {{trans('px')}}.
+                                                                            @lang('JPG or PNG only, maximum 3 MB.')
+                                                                        </span>
                                                                         @endif
 
-                                                                        @error($name.'.'.$language->id) @lang($message)
+                                                                        @error($name.'.'.$language->id) <span class="text-danger d-block">@lang($message)</span>
                                                                         @enderror
                                                                     </div>
 

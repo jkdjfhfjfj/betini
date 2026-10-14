@@ -174,6 +174,8 @@ class ContentController extends Controller
         if ($hasContentMedia) {
             $contentMedia = ContentMedia::firstOrNew(['content_id' => $content->id]);
             $contentMediaDescription = (array)($contentMedia->description ?: []);
+            $newContentMediaImages = [];
+            $oldContentMediaImages = [];
 
             foreach (config('contents.content_media') as $key => $media) {
                 $old_data = $contentMediaDescription[$key] ?? null;
@@ -188,7 +190,12 @@ class ContentController extends Controller
                         $thumb = config("contents.$content->name.size.thumb");
                     }
 
-                    $contentMediaDescription[$key] = $this->uploadImage($uploadedFile, config('location.content.path'), $size, $old_data, $thumb);
+                    $newFilename = $this->uploadImage($uploadedFile, config('location.content.path'), $size, null, $thumb);
+                    $contentMediaDescription[$key] = $newFilename;
+                    $newContentMediaImages[] = $newFilename;
+                    if (is_string($old_data) && $old_data !== '') {
+                        $oldContentMediaImages[] = $old_data;
+                    }
                 } elseif (\Illuminate\Support\Arr::has($request->all(), $key . '.' . $language)) {
                     $mediaValue = data_get($purifiedData, $key . '.' . $language);
                     $contentMediaDescription[$key] = trim((string)$mediaValue) === '' ? null : linkToEmbed($mediaValue);
@@ -201,7 +208,13 @@ class ContentController extends Controller
 
             $contentMedia->content_id = $content->id;
             $contentMedia->description = $contentMediaDescription ?? null;
-            $contentMedia->save();
+            try {
+                $contentMedia->save();
+            } catch (\Throwable $exception) {
+                $this->removeContentMediaImages($newContentMediaImages);
+                throw $exception;
+            }
+            $this->removeContentMediaImages($oldContentMediaImages);
         }
 
         return back()->with('success', 'Content Details Successfully Saved');
@@ -223,6 +236,20 @@ class ContentController extends Controller
         }
 
         return false;
+    }
+
+    private function removeContentMediaImages(array $filenames): void
+    {
+        $directory = rtrim(base_path(trim(config('location.content.path'), '/\\')), '/\\');
+        foreach (array_unique($filenames) as $filename) {
+            if (!is_string($filename) || $filename === '') {
+                continue;
+            }
+
+            $filename = basename($filename);
+            $this->removeFile($directory . DIRECTORY_SEPARATOR . $filename);
+            $this->removeFile($directory . DIRECTORY_SEPARATOR . 'thumb_' . $filename);
+        }
     }
 
     public function contentDelete($id)
