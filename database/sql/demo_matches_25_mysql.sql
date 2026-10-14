@@ -97,18 +97,21 @@ SET @demo_tournament_id := (
 
 -- Reuse demo team names if present; only create missing active records.
 INSERT INTO `game_teams`
-    (`name`, `image`, `status`, `created_at`, `updated_at`)
+    (`category_id`, `name`, `image`, `status`, `created_at`, `updated_at`)
 SELECT
+    @demo_category_id,
     seed.`name`,
     NULL,
     1,
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 FROM `tmp_demo_fixture_teams` seed
-WHERE NOT EXISTS (
+WHERE @demo_category_id IS NOT NULL
+  AND NOT EXISTS (
     SELECT 1
     FROM `game_teams` existing_team
     WHERE LOWER(TRIM(existing_team.`name`)) = LOWER(TRIM(seed.`name`))
+      AND existing_team.`category_id` = @demo_category_id
       AND existing_team.`status` = 1
 );
 
@@ -117,6 +120,7 @@ SELECT seed.`team_number`, MIN(team.`id`), seed.`name`
 FROM `tmp_demo_fixture_teams` seed
 JOIN `game_teams` team
   ON LOWER(TRIM(team.`name`)) = LOWER(TRIM(seed.`name`))
+ AND team.`category_id` = @demo_category_id
  AND team.`status` = 1
 GROUP BY seed.`team_number`, seed.`name`;
 
