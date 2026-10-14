@@ -1,10 +1,8 @@
--- MySQL / MariaDB demo fixtures using well-known international clubs.
+-- MySQL / MariaDB staging fixtures using well-known international clubs.
 -- Additive and repeatable: it preserves existing categories, tournaments,
--- teams, and matches. Fixtures are marked LOCAL DEMO, locked, and have no odds,
--- so they cannot be used to place bets.
--- Team pairings and future dates are generated demo data, not a real schedule.
+-- teams, and matches. The generated pairings and dates are not an official schedule.
 --
--- Run this in the app's remote database only if you want demo fixtures there.
+-- Run this only against an isolated staging database.
 -- The running application schema must include game_matches.name/status/is_unlock.
 
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_numbers;
@@ -79,12 +77,12 @@ SET @demo_category_id := (
       AND `status` = 1
 );
 
--- Reuse Local Preview League if it exists under the selected category.
+-- Reuse International Club Friendlies if it exists under the selected category.
 INSERT INTO `game_tournaments`
     (`category_id`, `name`, `status`, `created_at`, `updated_at`)
 SELECT
     @demo_category_id,
-    'Local Preview League',
+    'International Club Friendlies',
     1,
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
@@ -93,7 +91,7 @@ WHERE @demo_category_id IS NOT NULL
       SELECT 1
       FROM `game_tournaments`
       WHERE `category_id` = @demo_category_id
-        AND LOWER(TRIM(`name`)) = 'local preview league'
+        AND LOWER(TRIM(`name`)) = 'international club friendlies'
         AND `status` = 1
   );
 
@@ -101,11 +99,11 @@ SET @demo_tournament_id := (
     SELECT MIN(`id`)
     FROM `game_tournaments`
     WHERE `category_id` = @demo_category_id
-      AND LOWER(TRIM(`name`)) = 'local preview league'
+      AND LOWER(TRIM(`name`)) = 'international club friendlies'
       AND `status` = 1
 );
 
--- Reuse demo team names if present; only create missing active records.
+-- Reuse active team records when available; only create missing records.
 INSERT INTO `game_teams`
     (`category_id`, `name`, `image`, `status`, `created_at`, `updated_at`)
 SELECT
@@ -148,11 +146,11 @@ SELECT
     @demo_tournament_id,
     home.`team_id`,
     away.`team_id`,
-    CONCAT('LOCAL DEMO MATCH ', LPAD(numbers.`n`, 2, '0')),
+    CONCAT(home.`name`, ' vs ', away.`name`),
     DATE_ADD(CURRENT_TIMESTAMP, INTERVAL numbers.`n` DAY),
     DATE_ADD(DATE_ADD(CURRENT_TIMESTAMP, INTERVAL numbers.`n` DAY), INTERVAL 2 HOUR),
     1,
-    1,
+    0,
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 FROM `tmp_demo_fixture_numbers` numbers
@@ -165,17 +163,17 @@ WHERE @demo_category_id IS NOT NULL
   AND NOT EXISTS (
       SELECT 1
       FROM `game_matches` existing_match
-      WHERE existing_match.`name` = CONCAT('LOCAL DEMO MATCH ', LPAD(numbers.`n`, 2, '0'))
-        AND existing_match.`tournament_id` = @demo_tournament_id
+       WHERE existing_match.`team1_id` = home.`team_id`
+         AND existing_match.`team2_id` = away.`team_id`
+         AND existing_match.`tournament_id` = @demo_tournament_id
   );
 
 COMMIT;
 
 -- Expected result after the first run: 25.
-SELECT COUNT(*) AS `local_demo_match_count`
+SELECT COUNT(*) AS `fixture_count`
 FROM `game_matches`
-WHERE `tournament_id` = @demo_tournament_id
-  AND `name` LIKE 'LOCAL DEMO MATCH %';
+WHERE `tournament_id` = @demo_tournament_id;
 
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_resolved_teams;
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_fixture_resolved_teams_away;

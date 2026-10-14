@@ -1,7 +1,7 @@
 -- LOCAL PREVIEW ONLY: applies to /tmp/wallet-preview.sqlite.
 -- Do not use this file for production or as a replacement for the legacy
 -- production schema. It creates the empty legacy tables needed by public
--- home/auth screens and seeds one clearly labeled local demo football fixture.
+-- home/auth screens and seeds one football fixture with standard display names.
 
 CREATE TABLE IF NOT EXISTS configures (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -150,27 +150,27 @@ ON CONFLICT(id) DO UPDATE SET
 INSERT OR IGNORE INTO game_tournaments
     (id, category_id, name, slug, status, created_at, updated_at)
 VALUES
-    (1, 1, 'Local Preview League', 'local-preview-league', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    (1, 1, 'International Club Friendlies', 'international-club-friendlies', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT OR IGNORE INTO game_teams (id, name, image, status, created_at, updated_at)
 VALUES
-    (1, 'Preview City', NULL, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (2, 'Demo United', NULL, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    (1, 'Arsenal', NULL, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (2, 'Liverpool', NULL, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT OR IGNORE INTO game_matches
     (id, category_id, tournament_id, team1_id, team2_id, name, start_date, end_date, status, is_unlock, created_at, updated_at)
 VALUES
-    (1, 1, 1, 1, 2, 'LOCAL DEMO — Preview City vs Demo United',
+    (1, 1, 1, 1, 2, 'Arsenal vs Liverpool',
      datetime('now', '+1 hour'), datetime('now', '+3 hours'), 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT OR IGNORE INTO game_questions
     (id, match_id, name, "limit", end_time, is_unlock, status, created_at, updated_at)
 VALUES
-    (1, 1, 'Match Result (demo)', 1000, datetime('now', '+3 hours'), 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    (1, 1, 'Match Result (1X2)', 1000, datetime('now', '+3 hours'), 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT OR IGNORE INTO game_options
     (id, match_id, question_id, creator_id, option_name, invest_amount, return_amount, minimum_amount, ratio, status, created_at, updated_at)
 VALUES
-    (1, 1, 1, 0, 'Preview City', 0, 0, 1, '1.80', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (1, 1, 1, 0, 'Arsenal', 0, 0, 1, '1.80', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (2, 1, 1, 0, 'Draw', 0, 0, 1, '3.40', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (3, 1, 1, 0, 'Demo United', 0, 0, 1, '4.20', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    (3, 1, 1, 0, 'Liverpool', 0, 0, 1, '4.20', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

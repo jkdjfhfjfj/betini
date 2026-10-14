@@ -20,3 +20,9 @@ Remote fixture QA uses a separate staging-only MySQL connection; never replace t
 **Why:** the user identified the remote MySQL target as isolated testing, while the app preview remains SQLite; scheduled match-status processing can expire short test windows.
 
 **How to apply:** connect only through staging-specific secrets, verify the selected database before writing, batch fixture inserts transactionally, and give staged live events an end-time margin long enough for the host's timezone and status scheduler.
+
+Sportsbook fixture labels should use natural participant names, never visible "demo", "test", or "preview" tags. Fixture seeds should cover active sports, vary the market set/count while keeping at least ten markets per fixture, and leave matches bettable with some—but not all—markets locked.
+
+**Why:** the user explicitly wants realistic-looking fixture feeds for product testing without misleading labels or a uniform set of markets.
+
+**How to apply:** keep generated pairings, dates, and odds in isolated staging; describe them as synthetic rather than official/live data, and verify enough markets remain open for each fixture.

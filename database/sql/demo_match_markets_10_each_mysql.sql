@@ -1,15 +1,12 @@
--- Add ten sample markets and sample odds to every LOCAL DEMO MATCH in
--- Local Preview League. Options such as match result and double chance use
--- the actual international home/away club names on each fixture.
+-- Add ten standard football markets to fixtures in International Club Friendlies.
+-- This staging-only script uses the actual home/away club names on each fixture.
 -- MySQL / MariaDB.
 --
--- The sample questions and odds are active for display, but each question has
--- is_unlock = 1 and the demo matches are expected to have is_unlock = 1.
--- That keeps the sample prices visible but prevents users from placing bets.
+-- Questions and odds are active and available in the isolated staging database.
 -- No match status, existing question, option, result, or bet is overwritten.
 --
 -- Run the complete script in one phpMyAdmin SQL request/session. Run
--- demo_matches_25_mysql.sql first if the LOCAL DEMO MATCH fixtures do not exist.
+-- staging fixtures must already exist in the selected database.
 
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_market_seed;
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_market_option_seed;
@@ -104,7 +101,7 @@ SET @demo_tournament_id := (
     SELECT MIN(tournament.`id`)
     FROM `game_tournaments` tournament
     WHERE tournament.`category_id` = @demo_category_id
-      AND LOWER(TRIM(tournament.`name`)) = 'local preview league'
+      AND LOWER(TRIM(tournament.`name`)) = 'international club friendlies'
       AND tournament.`status` = 1
 );
 
@@ -114,8 +111,7 @@ SET @demo_creator_id := (SELECT MIN(admin_row.`id`) FROM `admins` admin_row);
 
 START TRANSACTION;
 
--- Add missing market questions only for the demo fixtures.
--- is_unlock = 1 keeps these sample markets visible but not bettable.
+-- Add missing market questions for the selected tournament.
 INSERT INTO `game_questions`
     (`match_id`, `creator_id`, `name`, `limit`, `end_time`,
      `is_unlock`, `status`, `created_at`, `updated_at`)
@@ -125,7 +121,7 @@ SELECT
     market.`market_name`,
     1000,
     match_row.`end_date`,
-    1,
+    0,
     1,
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
@@ -134,7 +130,6 @@ CROSS JOIN `tmp_demo_market_seed` market
 WHERE @demo_tournament_id IS NOT NULL
   AND @demo_creator_id IS NOT NULL
   AND match_row.`tournament_id` = @demo_tournament_id
-  AND match_row.`name` LIKE 'LOCAL DEMO MATCH %'
   AND match_row.`end_date` > CURRENT_TIMESTAMP
   AND NOT EXISTS (
       SELECT 1
@@ -161,7 +156,6 @@ JOIN `game_questions` question
  AND question.`end_time` > CURRENT_TIMESTAMP
 WHERE @demo_tournament_id IS NOT NULL
   AND match_row.`tournament_id` = @demo_tournament_id
-  AND match_row.`name` LIKE 'LOCAL DEMO MATCH %'
   AND match_row.`end_date` > CURRENT_TIMESTAMP
 GROUP BY match_row.`id`, market.`market_no`;
 
@@ -188,8 +182,7 @@ JOIN `game_teams` home_team
 JOIN `game_teams` away_team
   ON away_team.`id` = match_row.`team2_id`;
 
--- Add active sample odds, but keep each market locked as a demo.
--- Amount fields are initialized to zero / minimum one as in the local preview schema.
+-- Add active staged odds. Amount fields start at zero with minimum one.
 INSERT INTO `game_options`
     (`match_id`, `question_id`, `creator_id`, `option_name`,
      `invest_amount`, `return_amount`, `minimum_amount`, `ratio`,
@@ -219,7 +212,7 @@ WHERE @demo_creator_id IS NOT NULL
 
 COMMIT;
 
--- This should show ten markets and 25 active outcome/odds rows per demo match.
+-- Show the market and outcome counts for the selected fixtures.
 SELECT
     match_row.`id`,
     match_row.`name`,
@@ -235,15 +228,14 @@ LEFT JOIN `game_options` option_row
  AND option_row.`status` = 1
 WHERE @demo_tournament_id IS NOT NULL
   AND match_row.`tournament_id` = @demo_tournament_id
-  AND match_row.`name` LIKE 'LOCAL DEMO MATCH %'
 GROUP BY match_row.`id`, match_row.`name`
 ORDER BY match_row.`id`;
 
--- A NULL demo_creator_id means no admin row was found, so the guarded inserts
+-- A NULL creator ID means no admin row was found, so the guarded inserts
 -- were skipped; check the admins table before trying again.
 SELECT
-    @demo_tournament_id AS `demo_tournament_id`,
-    @demo_creator_id AS `demo_admin_creator_id`;
+    @demo_tournament_id AS `tournament_id`,
+    @demo_creator_id AS `market_creator_id`;
 
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_resolved_options;
 DROP TEMPORARY TABLE IF EXISTS tmp_demo_question_map;
