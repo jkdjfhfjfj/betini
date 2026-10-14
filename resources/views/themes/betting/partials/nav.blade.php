@@ -52,6 +52,31 @@
             </button>
             @auth
                 @include($theme.'partials.wallet-currency-switch')
+            @endauth
+            @guest
+                @unless(Request::routeIs('login', 'register', 'register.sponsor'))
+                    <form method="GET" action="{{ route('login') }}"
+                          class="wallet-currency-switch wallet-currency-switch-guest d-inline-flex align-items-center">
+                        <label class="sr-only" for="guest-header-wallet-currency">
+                            @lang('Sign in to choose your wallet currency')
+                        </label>
+                        <select id="guest-header-wallet-currency"
+                                name="currency"
+                                class="form-control form-control-sm"
+                                aria-label="@lang('Choose a currency; sign in to continue')"
+                                title="@lang('Choose a currency; sign in to continue')"
+                                onchange="this.form.submit()">
+                            @foreach(config('currencies.supported', []) as $code => $currency)
+                                <option value="{{ $code }}"
+                                    {{ strtoupper(config('basic.currency', 'USD')) === strtoupper($code) ? 'selected' : '' }}>
+                                    {{ strtoupper($code) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
+                @endunless
+            @endguest
+            @auth
                 <div class="dropdown user-dropdown d-inline-block">
                     <button type="button"
                             class="dropdown-toggle"
@@ -237,6 +262,15 @@
                 <span class="nav-label">@lang('Profile')</span>
             </a>
         @else
+            <a href="{{ route('login') }}" class="text-dark guest-history-link"
+               aria-label="@lang('Sign in to view Bet History')"
+               title="@lang('Sign in to view Bet History')">
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3.5h12v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"></path>
+                    <path d="M9 8h6m-6 3.5h6m-6 3.5h4"></path>
+                </svg>
+                <span class="nav-label">@lang('Bet History')</span>
+            </a>
             <a href="{{ route('login') }}" class="text-dark">
                 <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <circle cx="12" cy="8" r="3.4"></circle>
