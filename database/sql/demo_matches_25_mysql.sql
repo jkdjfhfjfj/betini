@@ -1,7 +1,8 @@
--- MySQL / MariaDB demo fixtures for the local-preview data set.
+-- MySQL / MariaDB demo fixtures using well-known international clubs.
 -- Additive and repeatable: it preserves existing categories, tournaments,
 -- teams, and matches. Fixtures are marked LOCAL DEMO, locked, and have no odds,
 -- so they cannot be used to place bets.
+-- Team pairings and future dates are generated demo data, not a real schedule.
 --
 -- Run this in the app's remote database only if you want demo fixtures there.
 -- The running application schema must include game_matches.name/status/is_unlock.
@@ -28,16 +29,16 @@ CREATE TEMPORARY TABLE tmp_demo_fixture_teams (
 ) ENGINE=MEMORY;
 
 INSERT INTO tmp_demo_fixture_teams (`team_number`, `name`) VALUES
-    (1, 'Preview City'),
-    (2, 'Demo United'),
-    (3, 'Eastside Athletic'),
-    (4, 'Lakeside Rovers'),
-    (5, 'Nairobi Comets'),
-    (6, 'Mombasa Mariners'),
-    (7, 'Kisumu Stars'),
-    (8, 'Rift Valley FC'),
-    (9, 'Coastline United'),
-    (10, 'Highlands FC');
+    (1, 'Arsenal'),
+    (2, 'Real Madrid'),
+    (3, 'Manchester City'),
+    (4, 'FC Barcelona'),
+    (5, 'Liverpool'),
+    (6, 'Bayern Munich'),
+    (7, 'Paris Saint-Germain'),
+    (8, 'Al Ahly SC'),
+    (9, 'Mamelodi Sundowns FC'),
+    (10, 'Flamengo');
 
 CREATE TEMPORARY TABLE tmp_demo_fixture_resolved_teams (
     `team_number` TINYINT UNSIGNED NOT NULL PRIMARY KEY,
