@@ -14,3 +14,9 @@ A temporary SQLite database can report the checked-in historical migrations as a
 **Why:** completing guessed schemas can hide real deployment differences and make a test appear valid when it is not.
 
 **How to apply:** inspect the SQLite tables and available schema files; if base tables are missing, keep testing routes that do not require them and request a sanitized schema export before attempting a full database-backed preview.
+
+Remote fixture QA uses a separate staging-only MySQL connection; never replace the local preview's SQLite settings or the app's normal database settings. Generated dates and odds are synthetic QA data and must stay isolated from production.
+
+**Why:** the user identified the remote MySQL target as isolated testing, while the app preview remains SQLite; scheduled match-status processing can expire short test windows.
+
+**How to apply:** connect only through staging-specific secrets, verify the selected database before writing, batch fixture inserts transactionally, and give staged live events an end-time margin long enough for the host's timezone and status scheduler.
