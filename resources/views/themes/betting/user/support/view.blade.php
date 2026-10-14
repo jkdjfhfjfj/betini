@@ -141,7 +141,7 @@
                                                         class="rounded-circle" width="45">
                                                 </div>
                                                 <div class="chat-content d-inline-block pl-3">
-                                                    <h6 class="font-weight-medium">{{optional($item->admin)->name}}</h6>
+                                                    <h6 class="font-weight-medium">{{optional($item->admin)->username ?: optional($item->admin)->name}}</h6>
 
                                                     <div class="media">
                                                         <div class="msg p-2 d-inline-block mb-1">

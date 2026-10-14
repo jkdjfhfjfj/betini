@@ -24,16 +24,16 @@
                                 @endif
                                 [{{trans('Ticket#'). $ticket->ticket }}] {{ $ticket->subject }}
                             </div>
+                            @if(adminAccessRoute(config('role.support_ticket.access.add')))
                             <div class="col-sm-2 text-sm-right mt-sm-0 mt-3">
-
                                 <button type="button" class="btn  btn-sm btn-outline-danger btn-rounded" data-toggle="modal"
                                         data-target="#closeTicketModal"><i
                                         class="fas fa-times-circle"></i> {{trans('Close')}}</button>
-
-
                             </div>
+                            @endif
                         </div>
                     </h5>
+                    @if(adminAccessRoute(config('role.support_ticket.access.add')))
                     <div class="card-body border mx-2">
                         <form class="form-row" action="{{ route('admin.ticket.reply', $ticket->id) }}" method="post"
                               enctype="multipart/form-data">
@@ -75,9 +75,18 @@
                                 @error('attachments')
                                 <span class="text-danger">{{trans($message)}}</span>
                                 @enderror
+                                @error('attachments.0')
+                                <span class="text-danger">{{trans($message)}}</span>
+                                @enderror
                             </div>
                         </form>
                     </div>
+                    @else
+                        <div class="alert alert-info mx-2" role="status">
+                            You can view this ticket, but your admin role does not include Support Ticket reply access.
+                            Ask an administrator to grant the Support Ticket add permission.
+                        </div>
+                    @endif
 
 
                     @if(count($ticket->messages) > 0)
@@ -137,12 +146,12 @@
                                         <li class="chat-item list-style-none mt-3">
                                             <div class="chat-img d-inline-block">
                                                 <img
-                                                    src="{{getFile(config('location.user.path').optional($item->user)->image)}}"
+                                                    src="{{getFile(config('location.user.path').optional($ticket->user)->image)}}"
                                                     alt="user"
                                                     class="rounded-circle" width="45">
                                             </div>
                                             <div class="chat-content d-inline-block pl-3">
-                                                <h6 class="font-weight-medium">{{optional($item->user)->username}}</h6>
+                                                <h6 class="font-weight-medium">{{optional($ticket->user)->username}}</h6>
 
                                                 <div class="media">
                                                     <div class="msg p-2 d-inline-block mb-1">
@@ -215,6 +224,7 @@
 
 
 
+    @if(adminAccessRoute(config('role.support_ticket.access.add')))
     <div class="modal fade" id="closeTicketModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
          aria-hidden="true">
         <div class="modal-dialog">
@@ -241,6 +251,7 @@
             </div>
         </div>
     </div>
+    @endif
 
 @endsection
 

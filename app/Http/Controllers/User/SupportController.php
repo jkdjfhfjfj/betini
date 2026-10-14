@@ -10,7 +10,6 @@ use App\Models\TicketAttachment;
 use App\Models\TicketMessage;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 
 class SupportController extends Controller
@@ -80,55 +79,53 @@ class SupportController extends Controller
     public function ticketView($ticketId)
     {
         $page_title = "Ticket: #".$ticketId;
-        $ticket = Ticket::where('ticket', $ticketId)->latest()->with('messages')->firstOrFail();
+        $ticket = Ticket::where('user_id', $this->user->id)
+            ->where('ticket', $ticketId)
+            ->with('messages.admin', 'messages.attachments', 'user')
+            ->firstOrFail();
         $user = $this->user;
         return view($this->theme.'user.support.view', compact('ticket', 'page_title', 'user'));
     }
 
     public function reply(Request $request, $id)
     {
-        $ticket = Ticket::findOrFail($id);
-        $message = new TicketMessage();
+        $ticket = Ticket::where('user_id', $this->user->id)->findOrFail($id);
+        $request->validate([
+            'replayTicket' => ['required', 'in:1,2'],
+        ]);
 
         if ($request->replayTicket == 1) {
-            $images = $request->file('attachments');
-            $allowedExtensions = array('jpg', 'png', 'jpeg', 'pdf');
-            $this->validate($request, [
-                'attachments' => [
-                    'max:4096',
-                    function ($fail) use ($images, $allowedExtensions) {
-                        foreach ($images as $img) {
-                            $ext = strtolower($img->getClientOriginalExtension());
-                            if (($img->getSize() / 1000000) > 2) {
-                                return $fail("Images MAX  2MB ALLOW!");
-                            }
-                            if (!in_array($ext, $allowedExtensions)) {
-                                return $fail("Only png, jpg, jpeg, pdf images are allowed");
-                            }
-                        }
-                        if (count($images) > 5) {
-                            return $fail("Maximum 5 images can be uploaded");
-                        }
-                    },
-                ],
-                'message' => 'required',
+            $request->validate([
+                'attachments' => ['nullable', 'array', 'max:5'],
+                'attachments.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
+                'message' => ['required', 'string', 'max:10000'],
             ]);
 
-            $ticket->status = 2;
-            $ticket->last_reply = Carbon::now();
-            $ticket->save();
+            $message = \Illuminate\Support\Facades\DB::transaction(function () use ($ticket, $request) {
+                $ticket->status = 2;
+                $ticket->last_reply = Carbon::now();
+                $ticket->save();
 
-            $message->ticket_id = $ticket->id;
-            $message->message = $request->message;
-            $message->save();
+                $message = new TicketMessage();
+                $message->ticket_id = $ticket->id;
+                $message->message = $request->input('message');
+                $message->save();
+
+                return $message;
+            });
 
             $path = config('location.ticket.path');
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $image) {
                     try {
                         $this->saveAttachment($message, $image, $path);
-                    } catch (\Exception $exp) {
-                        return back()->with('error', 'Could not upload your ' . $image)->withInput();
+                    } catch (\Throwable $exp) {
+                        \Illuminate\Support\Facades\Log::warning('Ticket reply attachment upload failed', [
+                            'ticket_id' => $ticket->id,
+                            'message_id' => $message->id,
+                            'exception' => $exp->getMessage(),
+                        ]);
+                        return back()->with('warning', 'Your reply was saved, but an attachment could not be uploaded.');
                     }
                 }
             }
@@ -141,7 +138,14 @@ class SupportController extends Controller
                 "icon" => "fas fa-ticket-alt text-white"
             ];
 
-            $this->adminPushNotification('SUPPORT_TICKET_REPLIED', $msg, $action);
+            try {
+                $this->adminPushNotification('SUPPORT_TICKET_REPLIED', $msg, $action);
+            } catch (\Throwable $exp) {
+                \Illuminate\Support\Facades\Log::warning('Ticket reply notification failed', [
+                    'ticket_id' => $ticket->id,
+                    'exception' => $exp->getMessage(),
+                ]);
+            }
 
             return back()->with('success', 'Ticket has been replied');
         } elseif ($request->replayTicket == 2) {
@@ -157,7 +161,10 @@ class SupportController extends Controller
 
     public function download($ticket_id)
     {
-        $attachment = TicketAttachment::findOrFail(decrypt($ticket_id));
+        $attachmentId = decrypt($ticket_id);
+        $attachment = TicketAttachment::whereHas('supportMessage.ticket', function ($query) {
+            $query->where('user_id', $this->user->id);
+        })->findOrFail($attachmentId);
         $file = $attachment->image;
         $path = config('location.ticket.path');
         $full_path = $path . '/' . $file;
@@ -165,10 +172,7 @@ class SupportController extends Controller
         if(file_exists($full_path)){
             $title = slug($attachment->supportMessage->ticket->subject);
             $ext = pathinfo($file, PATHINFO_EXTENSION);
-            $mimetype = mime_content_type($full_path);
-            header('Content-Disposition: attachment; filename="' . $title . '.' . $ext . '";');
-            header("Content-Type: " . $mimetype);
-            return readfile($full_path);
+            return response()->download($full_path, $title . '.' . $ext);
         }
         abort(404);
     }
@@ -180,29 +184,11 @@ class SupportController extends Controller
      */
     public function newTicketValidation(Request $request): void
     {
-        $images = $request->file('attachments');
-        $allowedExtension = array('jpg', 'png', 'jpeg', 'pdf');
-
-        $this->validate($request, [
-            'attachments' => [
-                'max:4096',
-                function ($attribute, $value, $fail) use ($images, $allowedExtension) {
-                    foreach ($images as $img) {
-                        $ext = strtolower($img->getClientOriginalExtension());
-                        if (($img->getSize() / 1000000) > 2) {
-                            return $fail("Images MAX  2MB ALLOW!");
-                        }
-                        if (!in_array($ext, $allowedExtension)) {
-                            return $fail("Only png, jpg, jpeg, pdf images are allowed");
-                        }
-                    }
-                    if (count($images) > 5) {
-                        return $fail("Maximum 5 images can be uploaded");
-                    }
-                },
-            ],
-            'subject' => 'required|max:100',
-            'message' => 'required'
+        $request->validate([
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
+            'subject' => ['required', 'string', 'max:100'],
+            'message' => ['required', 'string', 'max:10000'],
         ]);
     }
 

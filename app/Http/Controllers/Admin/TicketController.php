@@ -11,6 +11,8 @@ use App\Models\TicketMessage;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use \Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Stevebauman\Purify\Facades\Purify;
 use Facades\App\Services\BasicService;
 
@@ -86,7 +88,9 @@ class TicketController extends Controller
 
     public function ticketReply($id)
     {
-        $ticket = Ticket::where('id', $id)->with('user', 'messages')->firstOrFail();
+        $ticket = Ticket::where('id', $id)
+            ->with('user', 'messages.admin', 'messages.attachments')
+            ->firstOrFail();
         $title = 'Ticket #' . $ticket->ticket;
         return view('admin.ticket.show', compact('ticket', 'title'));
     }
@@ -94,45 +98,30 @@ class TicketController extends Controller
     public function ticketReplySend(Request $request, $id)
     {
         $ticket = Ticket::where('id', $id)->with('user')->firstOrFail();
-        $message = new TicketMessage();
+        $request->validate([
+            'replayTicket' => ['required', 'in:1,2'],
+        ]);
         if ($request->replayTicket == 1) {
-
-            $req = Purify::clean($request->except('_token', '_method'));
-
-            $imgs = $request->file('attachments');
-            $allowedExts = array('jpg', 'png', 'jpeg', 'pdf');
-
             $request->validate([
-                'attachments' => [
-                    'max:4096',
-                    function ($attribute, $value, $fail) use ($imgs, $allowedExts) {
-                        foreach ($imgs as $img) {
-                            $ext = strtolower($img->getClientOriginalExtension());
-                            if (($img->getSize() / 1000000) > 2) {
-                                return $fail("Images MAX  2MB ALLOW!");
-                            }
-
-                            if (!in_array($ext, $allowedExts)) {
-                                return $fail("Only png, jpg, jpeg, pdf images are allowed");
-                            }
-                        }
-                        if (count($imgs) > 5) {
-                            return $fail("Maximum 5 images can be uploaded");
-                        }
-                    }
-                ],
-                'message' => 'required',
+                'attachments' => ['nullable', 'array', 'max:5'],
+                'attachments.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
+                'message' => ['required', 'string', 'max:10000'],
             ]);
 
+            $messageText = Purify::clean($request->input('message'));
+            $message = DB::transaction(function () use ($ticket, $messageText) {
+                $ticket->status = 1;
+                $ticket->last_reply = Carbon::now();
+                $ticket->save();
 
-            $ticket->status = 1;
-            $ticket->last_reply = Carbon::now();
-            $ticket->save();
+                $message = new TicketMessage();
+                $message->ticket_id = $ticket->id;
+                $message->admin_id = $this->user->id;
+                $message->message = $messageText;
+                $message->save();
 
-            $message->ticket_id = $ticket->id;
-            $message->admin_id = $this->user->id;
-            $message->message = $req['message'];
-            $message->save();
+                return $message;
+            });
 
             $path = config('location.ticket.path');
             if ($request->hasFile('attachments')) {
@@ -142,8 +131,13 @@ class TicketController extends Controller
                             'ticket_message_id' => $message->id,
                             'image' => $this->uploadImage($image, $path),
                         ]);
-                    } catch (\Exception $exp) {
-                        return back()->with('error', 'Could not upload your ' . $image)->withInput();
+                    } catch (\Throwable $exp) {
+                        Log::warning('Admin ticket reply attachment upload failed', [
+                            'ticket_id' => $ticket->id,
+                            'message_id' => $message->id,
+                            'exception' => $exp->getMessage(),
+                        ]);
+                        return back()->with('warning', 'Your reply was saved, but an attachment could not be uploaded.');
                     }
                 }
             }
@@ -158,19 +152,24 @@ class TicketController extends Controller
                 "icon" => "fas fa-ticket-alt text-white"
             ];
 
-            $this->userPushNotification($ticket->user, 'ADMIN_REPLIED_TICKET', $msg, $action);
-
-
-            $this->sendMailSms($ticket->user, 'ADMIN_SUPPORT_REPLY', [
-                'ticket_id' => $ticket->ticket,
-                'ticket_subject' => $ticket->subject,
-                'reply' => $request->message,
-            ]);
-
+            try {
+                $this->userPushNotification($ticket->user, 'ADMIN_REPLIED_TICKET', $msg, $action);
+                $this->sendMailSms($ticket->user, 'ADMIN_SUPPORT_REPLY', [
+                    'ticket_id' => $ticket->ticket,
+                    'ticket_subject' => $ticket->subject,
+                    'reply' => $messageText,
+                ]);
+            } catch (\Throwable $exp) {
+                Log::warning('Ticket reply notification failed', [
+                    'ticket_id' => $ticket->id,
+                    'exception' => $exp->getMessage(),
+                ]);
+            }
 
             return back()->with('success', "Ticket has been replied");
         } elseif ($request->replayTicket == 2) {
             $ticket->status = 3;
+            $ticket->last_reply = Carbon::now();
             $ticket->save();
         }
 
