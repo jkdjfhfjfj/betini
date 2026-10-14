@@ -733,22 +733,50 @@
                 const statusUrl = @json(route('user.wallet.status', ['reference' => request()->query('reference')]));
                 const statusBox = document.getElementById('wallet-payment-status');
                 let attempts = 0;
+                let pollTimer = null;
+                let stopped = false;
                 statusBox.style.display = '';
 
+                const stopPolling = () => {
+                    stopped = true;
+                    if (pollTimer !== null) {
+                        window.clearTimeout(pollTimer);
+                        pollTimer = null;
+                    }
+                };
+
+                const schedulePoll = () => {
+                    if (stopped) return;
+                    pollTimer = window.setTimeout(() => {
+                        pollTimer = null;
+                        refreshStatus();
+                    }, 5000);
+                };
+
                 const refreshStatus = () => {
+                    if (stopped) return;
                     fetch(statusUrl, {headers: {'Accept': 'application/json'}})
                         .then(response => response.ok ? response.json() : Promise.reject())
                         .then(data => {
+                            if (stopped) return;
                             statusBox.textContent = data.message;
                             statusBox.className = 'alert ' + (data.status === 'succeeded' ? 'alert-success' : (data.status === 'failed' ? 'alert-danger' : 'alert-info'));
                             if (data.status === 'succeeded' || data.status === 'failed') {
-                                window.setTimeout(() => window.location.reload(), 1500);
+                                stopPolling();
+                                if (data.status === 'succeeded') {
+                                    window.setTimeout(() => {
+                                        const currentUrl = new URL(window.location.href);
+                                        currentUrl.searchParams.delete('reference');
+                                        window.history.replaceState({}, document.title, currentUrl.toString());
+                                        window.location.reload();
+                                    }, 1500);
+                                }
                             } else if (++attempts < 12) {
-                                window.setTimeout(refreshStatus, 5000);
+                                schedulePoll();
                             }
                         })
                         .catch(() => {
-                            if (++attempts < 12) window.setTimeout(refreshStatus, 5000);
+                            if (!stopped && ++attempts < 12) schedulePoll();
                         });
                 };
 

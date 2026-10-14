@@ -8,7 +8,8 @@
         "hot": "mix watch --hot",
         "prod": "npm run production",
         "production": "mix --production",
-        "test:match-filters": "node --test tests/JavaScript/match-feed-filters.test.js"
+        "test:match-filters": "node --test tests/JavaScript/match-feed-filters.test.js",
+        "test:wallet-status": "node --test tests/JavaScript/wallet-payment-status.test.js"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.2.1",
